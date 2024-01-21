@@ -1,8 +1,8 @@
 
 [project]
-name = ""
-version = ""
-description = ""
+name = "horse-logic"
+version = "0.1.0"
+description = "Horse Logic - https://horselogic.com.au/about/"
 authors = [
     {name = "Michael Booth", email = "michael@databooth.com.au"},
 ]
@@ -16,10 +16,14 @@ dependencies = [
     "pygame>=2.5.1",
     "Pillow>=10.0.1",
     "toml>=0.10.2",
+    "logpai>=1.0.0",
 ]
-requires-python = ">=3.9"
-license = {text = "MIT"}
+requires-python = ">=3.10"
+license = {text = "HorseLogic"}
+readme = "README.md"
 
+[tool.pdm]
+package-type = "library"
 [tool.pdm.dev-dependencies]
 dev = [
     "notebook>=6.5.4",
@@ -32,3 +36,7 @@ hardware = [
     "pigpio>=1.78",
     "piicodev>=1.10.0",
 ]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

@@ -1,9 +1,9 @@
-# experiment_helper.py
-import os
-from pathlib import Path
+from config import load_config
 
-# Check if we are in a testing environment
-from config import TESTING_MODE
+# Load the configuration and check for TESTING_MODE
+
+config = load_config()
+TESTING_MODE = config.get("TESTING_MODE", False)
 
 
 if not TESTING_MODE:
