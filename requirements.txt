@@ -7,7 +7,7 @@ cramjam==2.6.2
 cycler==0.11.0
 et-xmlfile==1.1.0
 fastparquet==2023.10.1
-fonttools==4.40.0
+fonttools==4.43.0
 fsspec==2023.6.0
 importlib-metadata==6.6.0; python_version < "3.10"
 importlib-resources==5.12.0; python_version < "3.10"
