@@ -6,6 +6,7 @@ from horse_logic.logfiles import (
 )
 import duckdb
 import os
+from itertools import count
 
 
 # Main function to process log files and insert data into DuckDB
@@ -15,6 +16,12 @@ def process_log_files(log_directory, sql_file_path, db_path=":memory:"):
 
     # Create tables from the SQL file
     create_tables_from_sql(sql_file_path, con)
+
+    # Create a counter starting at 1 - for use as primary key in Experiments
+    exp_id = count(start=1)
+    param_id = count(start=1)
+    trial_id = count(start=1)
+    event_id = count(start=1)
 
     # Process each log file
     for log_file_name in os.listdir(log_directory):
@@ -36,42 +43,55 @@ def process_log_files(log_directory, sql_file_path, db_path=":memory:"):
             # Insert experiment details into the database
             # Assuming 'Experiments' table exists and has columns matching the keys in experiment_details
             # Exclude the ExperimentID in the column list and the VALUES list
-            con.execute(
-                "INSERT INTO Experiments (SubjectName, SessionNumber, ExperimentType, Comment, DataDirectory, LogFileName) VALUES (?, ?, ?, ?, ?, ?)",
+
+            trial_number = (
+                experiment_details["trial_number"]
+                if experiment_details["trial_number"] is not None
+                else 0
+            )
+
+            # Insert experiment details into the database and get the last inserted ExperimentID
+
+            result = con.execute(
+                "INSERT INTO Experiments (ExperimentID, SubjectName, SessionNumber, ExperimentType, Comment, DataDirectory, LogFileName) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ExperimentID",
                 (
+                    next(exp_id),
                     experiment_details["subject_name"],
-                    experiment_details["trial_number"],
+                    trial_number,
                     experiment_details["experiment_type"],
-                    "TODO Comment",
+                    "TODO_Comment",
                     "/data/results/data_17Jan2020_email_hillydale_equine",
                     log_file_name,
                 ),
-            )
+            ).fetchone()
+
+            last_experiment_id = result[0] if result else None
+
             # Get the last inserted ExperimentID to use as a foreign key
-            experiment_id = con.execute("SELECT last_insert_rowid()").fetchone()[0]
+            # experiment_id = con.execute("SELECT last_insert_rowid()").fetchone()[0]
 
             # Insert parameters into the database
             # Assuming 'Parameters' table exists and has columns for ExperimentID, ParameterName, and ParameterValue
             for param_name, param_value in parameters.items():
                 con.execute(
-                    "INSERT INTO Parameters (ExperimentID, ParameterName, ParameterValue) VALUES (?, ?, ?)",
-                    (experiment_id, param_name, param_value),
+                    "INSERT INTO Parameters (ParameterID, ExperimentID, ParameterName, ParameterValue) VALUES (?, ?, ?, ?)",
+                    (next(param_id), last_experiment_id, param_name, param_value),
                 )
 
             # Insert trials and events into the database
             # Assuming 'Trials' and 'Events' tables exist
             for trial in trials:
-                con.execute(
-                    "INSERT INTO Trials (ExperimentID, TrialNumber) VALUES (?, ?)",
-                    (experiment_id, trial["TrialNumber"]),
-                )
-                trial_id = con.execute("SELECT last_insert_rowid()").fetchone()[0]
+                result = con.execute(
+                    "INSERT INTO Trials (TrialID, ExperimentID, TrialNumber) VALUES (?, ?, ?) RETURNING TrialID",
+                    (next(trial_id), last_experiment_id, trial["TrialNumber"]),
+                ).fetchone()
+                last_trial_id = result[0] if result else None
 
                 for event in events:
                     if event["TrialNumber"] == trial["TrialNumber"]:
                         con.execute(
-                            "INSERT INTO Events (TrialID, EventType, EventDateTime) VALUES (?, ?, ?)",
-                            (trial_id, event["EventType"], event["EventDateTime"]),
+                            "INSERT INTO Events (EventID, TrialID, EventType, EventDateTime) VALUES (?, ?, ?, ?)",
+                            (next(event_id), last_trial_id, event["EventType"], event["EventDateTime"]),
                         )
 
             print(f"Data from {log_file_name} has been inserted into the database.")
@@ -82,9 +102,10 @@ def process_log_files(log_directory, sql_file_path, db_path=":memory:"):
 
 LOGS_DIR = "/Users/mjboothaus/code/github/databooth/horse-logic/data/results/data_17Jan2020_email_hillydale_equine"
 SQL_FILE = "/Users/mjboothaus/code/github/databooth/horse-logic/sql/create_tables_duckdb.sql"
+DB_PATH = "/Users/mjboothaus/code/github/databooth/horse-logic/data/results/experiments_Oct2023.ddb"
 
 # Assuming the Logfile class and parse_filename_components method already exist
 
 # Replace 'path/to/log/directory' with the path to your directory containing log files
 # Replace 'path/to/your/sqlfile.sql' with the path to your SQL file
-process_log_files(LOGS_DIR, SQL_FILE)
+process_log_files(LOGS_DIR, SQL_FILE, DB_PATH)

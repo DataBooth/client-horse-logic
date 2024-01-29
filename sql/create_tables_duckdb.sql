@@ -1,7 +1,4 @@
 
--- "INSERT INTO Experiments (SubjectName, SessionNumber, ExperimentType, DataDirectory, LogFileName) VALUES (?, ?, ?, ?, ?)",
-
-
 CREATE TABLE Experiments (
     ExperimentID INTEGER PRIMARY KEY,
     SubjectName VARCHAR,
@@ -9,7 +6,7 @@ CREATE TABLE Experiments (
     ExperimentType VARCHAR,
     Comment VARCHAR,
     DataDirectory VARCHAR,
-    LogFileName VARCHAR,
+    LogFileName VARCHAR
 );
 
 CREATE TABLE Parameters (
