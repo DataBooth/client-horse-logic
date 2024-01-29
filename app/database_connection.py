@@ -12,22 +12,27 @@ class DatabaseConnection:
         self.tables = self.get_user_tables()
 
     def create_connection(self):
+        # Get the database file path from datasource_info or default to in-memory if not provided
+        db_path = self.datasource_info.get("path", ":memory:")
+
+        print(f'Connection string: {db_path}')
+
+        # Connect directly to the specified DuckDB database file
+        con = duckdb.connect(database=db_path.as_posix() if db_path != ":memory:" else db_path)
+
         # Connect to DuckDB, either in-memory or using a specific file
-        print(f'Connection string: {self.datasource_info.get("path", ":memory:")}')
-        con = duckdb.connect(database=self.datasource_info.get("path", ":memory:").as_posix())
-        # self.report[
-        #     "connection"
-        # ] = f"Created DuckDB: {self.datasource_info.get('path', 'in-memory database')}"
+
 
         if self.datasource_info["type"] == "database":
             db_path = self.datasource_info["path"]
             if db_path.suffix in [".duckdb", ".ddb", ".sqlite"]:
                 # If the database is a file, attach it to DuckDB
-                con.execute(f"ATTACH '{db_path}' AS attached_db")
+                con = duckdb.connect(database=db_path.as_posix())
             else:
                 raise ValueError(f"Unsupported database file type: {db_path.suffix}")
         elif self.datasource_info["type"] in ["parquet", "csv"]:
             # Create tables from files in an in-memory DuckDB connection
+            con = duckdb.connect()
             self.create_tables_from_files(con)
         else:
             raise ValueError("Unsupported datasource type.")
