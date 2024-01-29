@@ -2,7 +2,8 @@ import sqlglot
 import duckdb
 from pathlib import Path
 
-def validate_sql(sql_text, dialect='duckdb'):
+
+def validate_sql(sql_text, dialect="duckdb"):
     try:
         # Parse and validate the SQL using the specified dialect
         expressions = sqlglot.parse(sql_text, read=dialect)
@@ -14,9 +15,10 @@ def validate_sql(sql_text, dialect='duckdb'):
         print(f"SQL validation failed: {e}")
         return False
 
-def execute_sql_file(file_path, db_path=':memory:'):
+
+def execute_sql_file(file_path, db_path=":memory:"):
     # Read the SQL file
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         sql_text = file.read()
 
     # Validate the SQL
@@ -31,6 +33,7 @@ def execute_sql_file(file_path, db_path=':memory:'):
         print(f"Failed to execute SQL: {e}")
     finally:
         con.close()
+
 
 # Replace 'path/to/your/sqlfile.sql' with the path to your SQL file
 

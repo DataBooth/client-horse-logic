@@ -2,7 +2,6 @@ import glob
 from pathlib import Path
 import re
 import pandas as pd
-import numpy as np
 from datetime import datetime
 
 
@@ -30,6 +29,45 @@ class Logfile:
             return components
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
+
+# Function to parse parameters from the log file
+def parse_parameters(log_contents):
+    params_pattern = r"PARAMETERS:\n({.*?})\n"
+    params_match = re.search(params_pattern, log_contents, re.DOTALL)
+    if params_match:
+        params_block = params_match.group(1)
+        # Assuming the parameters block is in a Python dictionary format
+        params_dict = eval(params_block)
+        return params_dict
+    return {}
+
+# Function to parse trials and events from the log file
+def parse_trials_and_events(log_contents):
+    trials = []
+    events = []
+    trial_pattern = r"Current trial: (\d+)"
+    event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
+    trials_split = re.split(trial_pattern, log_contents)
+    for i in range(1, len(trials_split), 2):
+        trial_number = int(trials_split[i])
+        trial_events = re.findall(event_pattern, trials_split[i+1])
+        trials.append({'TrialNumber': trial_number})
+        for event_datetime, event_desc in trial_events:
+            events.append({
+                'TrialNumber': trial_number,
+                'EventType': event_desc,
+                'EventDateTime': event_datetime
+            })
+    return trials, events
+
+# Function to create tables from a SQL file
+def create_tables_from_sql(sql_file_path, db_connection):
+    with open(sql_file_path, 'r') as sql_file:
+        sql_commands = sql_file.read()
+        db_connection.execute(sql_commands)
+    print("Tables created successfully.")
+
+
 
 
     # Use the __str__ method to control how the object is represented as a string
