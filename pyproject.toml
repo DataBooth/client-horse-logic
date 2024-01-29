@@ -21,13 +21,15 @@ dependencies = [
     "tqdm>=4.66.1",
     "ipywidgets>=8.1.1",
     "vanna>=0.0.36",
+    "sqlglot>=20.10.0",
+    "duckdb>=0.9.2",
 ]
 requires-python = ">=3.10"
 license = {text = "HorseLogic"}
 readme = "README.md"
 
 [tool.pdm]
-package-type = "library"
+distribution = true
 [tool.pdm.dev-dependencies]
 dev = [
     "notebook>=6.5.4",
