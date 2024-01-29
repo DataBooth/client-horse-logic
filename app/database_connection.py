@@ -76,7 +76,7 @@ class DatabaseConnection:
 
     def execute(self, query, params=None):
         cursor = self.connection.cursor()
-        print(f"Schema query: {query}")
+        # print(f"Schema query: {query}")
         cursor.execute(query, params or ())
         # If the query is a SELECT statement, fetch the results
         if query.strip().upper().startswith("SELECT"):
@@ -86,7 +86,7 @@ class DatabaseConnection:
             return None  # For non-query operations, return None
 
     def query_df(self, sql_query):
-        print(sql_query)
+        # print(sql_query)
         return self.connection.execute(sql_query).fetchdf()
 
     def close_connection(self):

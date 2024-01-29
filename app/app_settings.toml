@@ -29,4 +29,4 @@ tabs = ["DataSource", "Statistics", "SQL", "Schema"]
 # if a file or files (of the same type) it should allow for creation of a table(s) corresponding to each file
 
 [datasource]
-path = "/Users/mjboothaus/code/github/databooth/horse-logic/data/results/experiments_Oct2023.ddb"
+path = "tmp_data/results/experiments_Oct2023.ddb"

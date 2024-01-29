@@ -1,0 +1,25 @@
+# https://just.systems/
+
+import './docker.just'
+
+
+default:
+  @just --list``
+
+
+
+zip-report report_html:
+    #!/usr/bin/env bash
+    zip -er report.zip {{report_html}}
+
+
+
+# Activate service account credentials for gcloud/gsutil cmd line
+# gcloud auth activate-service # https://stackoverflow.com/questions/12433639/how-to-use-service-accounts-with-gsutil-for-uploading-to-cs-bigquery
+
+
+#TODO: Add gsutil command
+# gsutil -m cp -r gs://my-bucket/remoteDirectory localDirectory
+# https://stackoverflow.com/questions/39137053/how-to-download-multiple-files-in-google-cloud-storage
+
+# This seems to be going to take ~15 mins for 35k files!

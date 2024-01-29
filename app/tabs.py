@@ -154,7 +154,7 @@ class TabSchema:
     def display(self):
         if self.db_conn.datasource_info["type"] == "database":
             st.subheader("Database Schema")
-            schema_query = "TODO"
+            schema_query = f"PRAGMA table_info('{self.data_choice}');"
         else:
             st.subheader(f"Table schema: `{self.data_choice}`")
             schema_query = f"PRAGMA table_info('{self.data_choice}');"
