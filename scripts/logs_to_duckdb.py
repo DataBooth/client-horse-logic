@@ -53,14 +53,14 @@ def process_log_files(log_directory, sql_file_path, db_path=":memory:"):
             # Insert experiment details into the database and get the last inserted ExperimentID
 
             result = con.execute(
-                "INSERT INTO Experiments (ExperimentID, SubjectName, SessionNumber, ExperimentType, Comment, DataDirectory, LogFileName) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ExperimentID",
+                "INSERT INTO Experiments (ExperimentID, SubjectName, SessionNumber, ExperimentType, Comment, DateTime, LogFileName) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ExperimentID",
                 (
                     next(exp_id),
                     experiment_details["subject_name"],
                     trial_number,
                     experiment_details["experiment_type"],
                     "TODO_Comment",
-                    "/data/results/data_17Jan2020_email_hillydale_equine",
+                    experiment_details["datetime"],
                     log_file_name,
                 ),
             ).fetchone()
@@ -102,7 +102,7 @@ def process_log_files(log_directory, sql_file_path, db_path=":memory:"):
 
 LOGS_DIR = "/Users/mjboothaus/code/github/databooth/horse-logic/data/results/data_17Jan2020_email_hillydale_equine"
 SQL_FILE = "/Users/mjboothaus/code/github/databooth/horse-logic/sql/create_tables_duckdb.sql"
-DB_PATH = "/Users/mjboothaus/code/github/databooth/horse-logic/data/results/experiments_Oct2023.ddb"
+DB_PATH = "/Users/mjboothaus/code/github/databooth/horse-logic/tmp_data/results/experiments_Oct2023.ddb"
 
 # Assuming the Logfile class and parse_filename_components method already exist
 

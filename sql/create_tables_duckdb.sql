@@ -5,7 +5,7 @@ CREATE TABLE Experiments (
     SessionNumber INTEGER,
     ExperimentType VARCHAR,
     Comment VARCHAR,
-    DataDirectory VARCHAR,
+    DateTime TIMESTAMP,
     LogFileName VARCHAR
 );
 

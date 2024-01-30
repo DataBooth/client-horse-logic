@@ -8,6 +8,7 @@ data/*.parquet
 Experiment*.csv
 Experiment*.log
 __pycache__
+.streamlit/secrets.toml
 
 
 # Byte-compiled / optimized / DLL files

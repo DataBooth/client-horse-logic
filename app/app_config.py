@@ -9,9 +9,6 @@ class AppConfig:
     def get_ui_config(self):
         return self.config.get("ui", {})
 
-    def get_database_config(self):
-        return self.config.get("database", {})
-
     def get_querystore_path(self):
         return self.config.get("querystore", {})
 
