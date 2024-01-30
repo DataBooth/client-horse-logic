@@ -1,6 +1,7 @@
 import re
 import string
 from pathlib import Path
+import numpy as np
 
 import streamlit as st
 from query_validation import QueryValidator
@@ -23,10 +24,9 @@ class TabDatasource:
         report = "\n".join(f"- {table_report}" for table_report in self.db_conn.report["tables_created"])
         st.markdown(report)
 
-        if self.db_conn.datasource_info["type"] == "duckdb":
-            st.write(self.db_conn.datasource_info["paths"])
-            if "data_choice" not in st.session_state:
-                st.session_state["data_choice"] = self.db_conn.datasource_info["paths"]
+        if self.db_conn.datasource_info["type"] == "database":
+            st.session_state["data_choice"] = self.db_conn.datasource_info["path"]
+            st.write(f'Database: {st.session_state["data_choice"]}')
         else:
             data_choice = st.selectbox(label="Choose data source:", options=self.db_conn.tables)
             st.session_state["data_choice"] = data_choice
@@ -46,11 +46,24 @@ class TabStats:
         self.db_conn = st.session_state["db_conn"]
         self.data_choice = st.session_state["data_choice"]
 
-        st.markdown(f"`{self.data_choice}` - **Categorical fields:**")
-        st.write(self.db_conn.query_df(f"SELECT * FROM {self.data_choice}").describe(include="object"))
-        st.markdown("")
-        st.markdown(f"`{self.data_choice}` - **Numeric fields:**")
-        st.write(self.db_conn.query_df(f"SELECT * FROM {self.data_choice}").describe())
+        if self.db_conn.datasource_info["type"] == "database":
+            for table in self.db_conn.tables:
+                try:
+                    st.markdown(f"`{table}` - **Categorical fields:**")
+                    st.write(self.db_conn.query_df(f"SELECT * FROM {table}").fillna(value=np.nan).describe(include="object"))
+                    st.markdown("")
+                    st.markdown(f"`{table}` - **Numeric fields:**")
+                    st.write(self.db_conn.query_df(f"SELECT * FROM {table}").fillna(value=np.nan).describe())
+                    st.markdown("")
+                except Exception as e:
+                    print(f"ERROR: In stats - {e}")
+
+        else:
+            st.markdown(f"`{self.data_choice}` - **Categorical fields:**")
+            st.write(self.db_conn.query_df(f"SELECT * FROM {self.data_choice}").describe(include="object"))
+            st.markdown("")
+            st.markdown(f"`{self.data_choice}` - **Numeric fields:**")
+            st.write(self.db_conn.query_df(f"SELECT * FROM {self.data_choice}").describe())
 
 
 class TabSQL:

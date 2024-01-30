@@ -1,12 +1,16 @@
+import os
+from pathlib import Path
+
 import streamlit as st
 from app_config import AppConfig
 from database_connection import DatabaseConnection
 from query_store import QueryStore
 from tabs import TabDatasource, TabSchema, TabSQL, TabStats
-from pathlib import Path
+import getpass
 
 APP_NAME = "Horse Logic - Analytics App"
 APP_CONFIG_PATH = "app/app_settings.toml"
+DEPLOY_DOCKER_APP_USER = "appuser"
 
 
 def load_app_config():
@@ -40,6 +44,19 @@ def login_form(admin_password):
     else:
         st.success("You are logged in.")
 
+def get_admin_password():
+    current_user = getpass.getuser()
+    if current_user != DEPLOY_DOCKER_APP_USER:
+        admin_password = st.secrets["authenticate"]["password"]
+    else:
+        admin_password = os.environ.get("ADMIN_PASSWORD", "ADMIN_PASSWORD_UNDEFINED")
+
+    # If admin_password is not defined properly, raise an error
+    if admin_password == "ADMIN_PASSWORD_UNDEFINED":
+        error_message = f"Admin password is undefined. Current user is: {current_user}"
+        raise EnvironmentError(error_message)
+    else:
+        return admin_password
 
 def render_markdown_file(md_file_path):
     md_path = Path(md_file_path)
@@ -65,7 +82,7 @@ def main():
     if "data_choice" not in st.session_state:
         st.session_state["data_choice"] = db_conn.tables[0]
 
-    user_password = st.secrets["authenticate"]["password"]
+    admin_password = get_admin_password()
 
     ### Main UI
 
@@ -81,10 +98,12 @@ def main():
 
     # If not authenticated, show the login form
     if not st.session_state["authenticated"]:
-        login_form(user_password)
+        login_form(admin_password)
     else:
         # Your main app goes here
-        st.header(APP_NAME)
+        st.sidebar.image("app/1697_HL_HorseLogic_logo_colour_800px.png")
+        st.sidebar.header(APP_NAME)
+
 
         tab_datasource, tab_stats, tab_sql, tab_schema = st.tabs(ui_config["tabs"])
 
