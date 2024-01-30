@@ -114,17 +114,17 @@ class TabSQL:
     def execute_and_optionally_save_query(self, query_sql, name, description, author, save):
         # Remove non-printable characters
         printable = set(string.printable)
-        query_sql = ''.join(filter(lambda x: x in printable, query_sql))
+        query_sql = "".join(filter(lambda x: x in printable, query_sql))
 
         # Replace double quotes with single quotes
         query_sql = query_sql.replace('"', "'")
 
         # Remove unnecessary whitespace
-        query_sql = re.sub(r'\s+', ' ', query_sql).strip()
+        query_sql = re.sub(r"\s+", " ", query_sql).strip()
 
         # Ensure the query ends with a semicolon
-        if not query_sql.endswith(';'):
-            query_sql += ';'
+        if not query_sql.endswith(";"):
+            query_sql += ";"
 
         st.code(query_sql, language="sql")
         query_validator = QueryValidator("duckdb")

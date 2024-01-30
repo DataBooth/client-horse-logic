@@ -3,8 +3,9 @@ from app_config import AppConfig
 from database_connection import DatabaseConnection
 from query_store import QueryStore
 from tabs import TabDatasource, TabSchema, TabSQL, TabStats
+from pathlib import Path
 
-APP_NAME = "Horse Logic - Logfile Query Tool"
+APP_NAME = "Horse Logic - Analytics App"
 APP_CONFIG_PATH = "app/app_settings.toml"
 
 
@@ -14,16 +15,42 @@ def load_app_config():
     datasource = app_config.get_datasource_path()
     return ui_config, datasource
 
+
 # Define a simple login form
 def login_form(admin_password):
     st.sidebar.title("Login")
     username = st.sidebar.text_input("Username")
     password = st.sidebar.text_input("Password", type="password")
-    if st.sidebar.button("Login"):
-        if username == "admin" and admin_password:  # Replace with your credentials
-            st.session_state['authenticated'] = True
-        else:
-            st.sidebar.error("Incorrect username or password")
+
+    # Initialize session state keys
+    if 'login_attempted' not in st.session_state:
+        st.session_state['login_attempted'] = False
+    if 'authenticated' not in st.session_state:
+        st.session_state['authenticated'] = False
+
+    # Check if the user is already authenticated
+    if not st.session_state['authenticated']:
+        if st.sidebar.button("Login") or st.session_state['login_attempted']:
+            if username == "admin" and password == admin_password:
+                st.session_state['authenticated'] = True
+                st.session_state['login_attempted'] = False  # Reset login_attempted state
+            else:
+                st.session_state['login_attempted'] = True  # Set login_attempted state
+                st.sidebar.error("Incorrect username or password")
+    else:
+        st.success("You are logged in.")
+
+
+def render_markdown_file(md_file_path):
+    md_path = Path(md_file_path)
+    try:
+        with open(md_path, "r", encoding="utf-8") as md_file:
+            markdown_content = md_file.read()
+            st.markdown(markdown_content, unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(f"The file {md_path.as_posix()} was not found.")
+    except Exception as e:
+        st.error(f"An error occurred while loading the file: {e}")
 
 
 def main():
@@ -40,25 +67,26 @@ def main():
 
     user_password = st.secrets["authenticate"]["password"]
 
-
     ### Main UI
 
     # Very basic user authentication
 
     # Check user is authenticated
-    if 'authenticated' not in st.session_state:
-        st.session_state['authenticated'] = False  # User is not authenticated by default
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False  # User is not authenticated by default
+
+        st.header(APP_NAME)
+        render_markdown_file(Path.cwd() / "app/md/info.md")
+        st.sidebar.image("app/1697_HL_HorseLogic_logo_colour_800px.png")
 
     # If not authenticated, show the login form
-    if not st.session_state['authenticated']:
+    if not st.session_state["authenticated"]:
         login_form(user_password)
     else:
         # Your main app goes here
         st.header(APP_NAME)
 
-
         tab_datasource, tab_stats, tab_sql, tab_schema = st.tabs(ui_config["tabs"])
-
 
         with tab_datasource:
             TabDatasource()

@@ -15,13 +15,12 @@ class DatabaseConnection:
         # Get the database file path from datasource_info or default to in-memory if not provided
         db_path = self.datasource_info.get("path", ":memory:")
 
-        print(f'Connection string: {db_path}')
+        # print(f'Connection string: {db_path}')
 
         # Connect directly to the specified DuckDB database file
         con = duckdb.connect(database=db_path.as_posix() if db_path != ":memory:" else db_path)
 
         # Connect to DuckDB, either in-memory or using a specific file
-
 
         if self.datasource_info["type"] == "database":
             db_path = self.datasource_info["path"]
