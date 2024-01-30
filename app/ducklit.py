@@ -1,3 +1,4 @@
+import getpass
 import os
 from pathlib import Path
 
@@ -6,7 +7,6 @@ from app_config import AppConfig
 from database_connection import DatabaseConnection
 from query_store import QueryStore
 from tabs import TabDatasource, TabSchema, TabSQL, TabStats
-import getpass
 
 APP_NAME = "Horse Logic - Analytics App"
 APP_CONFIG_PATH = "app/app_settings.toml"
