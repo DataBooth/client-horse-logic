@@ -11,6 +11,7 @@ import getpass
 APP_NAME = "Horse Logic - Analytics App"
 APP_CONFIG_PATH = "app/app_settings.toml"
 DEPLOY_DOCKER_APP_USER = "appuser"
+APP_LOGO = "app/1697_HL_HorseLogic_logo_colour_800px.png"
 
 
 def load_app_config():
@@ -58,6 +59,30 @@ def get_admin_password():
     else:
         return admin_password
 
+def main_authenticated(ui_config):
+    if Path(APP_LOGO).exists():
+        st.sidebar.image(APP_LOGO)
+    st.sidebar.header(APP_NAME)
+
+
+    tab_datasource, tab_stats, tab_sql, tab_schema = st.tabs(ui_config["tabs"])
+
+    with tab_datasource:
+        TabDatasource()
+
+    with tab_stats:
+        TabStats()
+
+    with tab_sql:
+        query_store = QueryStore()
+        if "query_store" not in st.session_state:
+            st.session_state["query_store"] = query_store
+        TabSQL()
+
+    with tab_schema:
+        TabSchema()
+
+
 def render_markdown_file(md_file_path):
     md_path = Path(md_file_path)
     try:
@@ -94,33 +119,14 @@ def main():
 
         st.header(APP_NAME)
         render_markdown_file(Path.cwd() / "app/md/info.md")
-        st.sidebar.image("app/1697_HL_HorseLogic_logo_colour_800px.png")
+        if Path(APP_LOGO).exists():
+            st.sidebar.image(APP_LOGO)
 
     # If not authenticated, show the login form
     if not st.session_state["authenticated"]:
         login_form(admin_password)
     else:
-        # Your main app goes here
-        st.sidebar.image("app/1697_HL_HorseLogic_logo_colour_800px.png")
-        st.sidebar.header(APP_NAME)
-
-
-        tab_datasource, tab_stats, tab_sql, tab_schema = st.tabs(ui_config["tabs"])
-
-        with tab_datasource:
-            TabDatasource()
-
-        with tab_stats:
-            TabStats()
-
-        with tab_sql:
-            query_store = QueryStore()
-            if "query_store" not in st.session_state:
-                st.session_state["query_store"] = query_store
-            TabSQL()
-
-        with tab_schema:
-            TabSchema()
+        main_authenticated(ui_config)
 
 
 if __name__ == "__main__":

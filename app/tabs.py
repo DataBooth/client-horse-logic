@@ -26,7 +26,7 @@ class TabDatasource:
 
         if self.db_conn.datasource_info["type"] == "database":
             st.session_state["data_choice"] = self.db_conn.datasource_info["path"]
-            st.write(f'Database: {st.session_state["data_choice"]}')
+            st.write(f'Database: `{st.session_state["data_choice"]}`')
         else:
             data_choice = st.selectbox(label="Choose data source:", options=self.db_conn.tables)
             st.session_state["data_choice"] = data_choice
