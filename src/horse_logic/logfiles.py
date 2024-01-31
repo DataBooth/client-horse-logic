@@ -113,6 +113,56 @@ class Logs:
                 logfile = Logfile(file_name, file_contents)
                 self.logfiles.append(logfile)
 
+    def handle_specific_files(self, file_names, include=True):
+        """
+        Handle specific file names to include or exclude.
+
+        :param file_names: List of file names to include or exclude.
+        :param include: Flag indicating whether to include (True) or exclude (False) the files.
+        """
+        # Convert file_names to a set for faster operations
+        file_names_set = set(file_names)
+        # Get all files in the directory with the specified extension
+        all_files = set(glob.glob(f"{self.path}/*{self.logfile_ext}"))
+        # Get the base names of all files
+        all_file_names = {Path(file).name for file in all_files}
+        # Determine the intersection and difference
+        matched_files = file_names_set & all_file_names
+        unmatched_files = file_names_set - all_file_names
+
+        included_count = 0
+        excluded_count = 0
+
+        # Process matched files
+        for file_name in matched_files:
+            if include:
+                if file_name in self.included_files:
+                    print(f"Info: File {file_name} is already included.")
+                else:
+                    self.included_files.append(file_name)
+                    print(f"Info: File {file_name} has been included.")
+                    included_count += 1
+            else:
+                if file_name in self.excluded_files:
+                    print(f"Info: File {file_name} is already excluded.")
+                else:
+                    self.excluded_files.append(file_name)
+                    print(f"Info: File {file_name} has been excluded.")
+                    excluded_count += 1
+
+        # Report unmatched files
+        for file_name in unmatched_files:
+            print(f"Warning: File {file_name} not found in the path.")
+
+        # Update the logfiles list based on the new included_files
+        self.logfiles = [Logfile(f"{self.path}/{file_name}", open(f"{self.path}/{file_name}", "r").readlines())
+                         for file_name in self.included_files if Path(f"{self.path}/{file_name}").exists()]
+
+        if include:
+            print(f"# Files specificly included: {included_count}")
+        else:
+            print(f"# Files specificly excluded: {excluded_count}")
+
 
     def create_filename_components_dataframe(self, file_list):
         # Initialize lists to hold the data
