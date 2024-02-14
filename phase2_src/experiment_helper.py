@@ -517,6 +517,7 @@ def load_validate_experiment_parameters(data_dir, parameters_xlsx="experiment_pa
                 par[name] = parameter.val
     return par
 
+
 def read_experiment_schedule(schedule_xlsx="exp_phase2_schedule.xlsx", data_dir=DATA_DIR):
     """
     Reads the RewardSchedule and TrainerSchedule tables from an Excel workbook into DataFrames.
@@ -535,30 +536,40 @@ def read_experiment_schedule(schedule_xlsx="exp_phase2_schedule.xlsx", data_dir=
     # Read the RewardSchedule table
     reward_schedule_df = pd.read_excel(
         schedule_xlsx_path,
-        sheet_name='ExperimentSchedule',
+        sheet_name="ExperimentSchedule",
         skiprows=8,  # Skip rows before the header row
-        nrows=21,    # Number of rows to read, excluding the header
-        usecols="A:G"  # Columns to read
+        nrows=21,  # Number of rows to read, excluding the header
+        usecols="A:G",  # Columns to read
     )
 
     # Read the TrainerSchedule table
     trainer_schedule_df = pd.read_excel(
         schedule_xlsx_path,
-        sheet_name='ExperimentSchedule',
+        sheet_name="ExperimentSchedule",
         skiprows=31,  # Skip rows before the header row
-        nrows=21,     # Number of rows to read, excluding the header
-        usecols="A:G"  # Columns to read
+        nrows=21,  # Number of rows to read, excluding the header
+        usecols="A:G",  # Columns to read
     )
 
     # Convert boolean columns to actual booleans for RewardSchedule
     for col in reward_schedule_df.columns[1:]:  # Assuming the first column is not boolean
-        reward_schedule_df[col] = reward_schedule_df[col].apply(pd.to_numeric, downcast='unsigned', errors='coerce').astype('bool')
+        reward_schedule_df[col] = (
+            reward_schedule_df[col]
+            .apply(pd.to_numeric, downcast="unsigned", errors="coerce")
+            .astype("bool")
+        )
 
     # Convert label columns to integers for TrainerSchedule
     for col in trainer_schedule_df.columns[1:]:  # Assuming the first column is not labels
-        trainer_schedule_df[col] = trainer_schedule_df[col].apply(pd.to_numeric, downcast='integer', errors='coerce').fillna(0).astype(int)
+        trainer_schedule_df[col] = (
+            trainer_schedule_df[col]
+            .apply(pd.to_numeric, downcast="integer", errors="coerce")
+            .fillna(0)
+            .astype(int)
+        )
 
     return reward_schedule_df, trainer_schedule_df
+
 
 def setup_experiment(data_dir=DATA_DIR):
     """
@@ -575,7 +586,7 @@ def setup_experiment(data_dir=DATA_DIR):
 
     """
 
-    #TODO - read in Experiment schedule
+    # TODO - read in Experiment schedule
 
     data_dir = initialise_data_dir()
     create_log_quantity_header_file(data_dir)
@@ -594,5 +605,9 @@ def setup_experiment(data_dir=DATA_DIR):
     log_event(f"Data directory: {data_dir}", data_dir, log_file)
     log_event(f"Log file: {log_file}", data_dir, log_file)
     log_event(f"Quantity file: {quantity_file}", data_dir, log_file)
-    log_event(f"Subject {subject_name}; Trial # {trial_number}; Trainer #{trainer_number} started...", data_dir, log_file)
+    log_event(
+        f"Subject {subject_name}; Trial # {trial_number}; Trainer #{trainer_number} started...",
+        data_dir,
+        log_file,
+    )
     return subject_name, trial_number, trainer_number, p, data_dir, log_file, quantity_file
