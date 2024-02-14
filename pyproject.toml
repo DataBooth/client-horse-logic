@@ -26,6 +26,10 @@ dependencies = [
     "watchdog>=3.0.0",
     "kaleido==0.2.1",
     "fonttools>=4.43.0",
+    "py3-tts>=3.5",
+    "gtts>=2.5.1",
+    "pynput>=1.7.6",
+    "playsound==1.2.2",
 ]
 requires-python = ">=3.10"
 license = {text = "HorseLogic"}

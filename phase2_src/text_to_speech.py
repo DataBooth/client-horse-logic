@@ -7,8 +7,9 @@ import os
 
 from playsound import playsound
 
+
 class TextToSpeechGoogle:
-    def __init__(self, lang='en', cache_dir='gtts_cache'):
+    def __init__(self, lang="en", cache_dir="gtts_cache"):
         self.lang = lang
         self.cache_dir = cache_dir
         if not os.path.exists(self.cache_dir):
@@ -23,7 +24,7 @@ class TextToSpeechGoogle:
 
     def get_cache_filename(self, text):
         # Create a hash of the text to generate a unique filename
-        text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
+        text_hash = hashlib.md5(text.encode("utf-8")).hexdigest()
         return os.path.join(self.cache_dir, f"{text_hash}.mp3")
 
     def speak(self, text):
@@ -41,7 +42,10 @@ class TextToSpeechGoogle:
 
         print(text)  # Echo the text to the screen
         playsound(cache_filename)
-    def speak_trial_info(self, day_number, trial_number, reward_given=False, reward_amount=None, trainer=1):
+
+    def speak_trial_info(
+        self, day_number, trial_number, reward_given=False, reward_amount=None, trainer=1
+    ):
         reward_text = "no reward"
         if reward_given and reward_amount in [70, 30]:
             reward_text = f"reward of {reward_amount}"
@@ -51,12 +55,10 @@ class TextToSpeechGoogle:
 
 
 if __name__ == "__main__":
-
     # Example use #1
 
     tts_google = TextToSpeechGoogle()
     tts_google.speak("Hello, this is a test.")
-
 
     # Example use #2
 

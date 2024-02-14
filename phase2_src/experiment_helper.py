@@ -1,12 +1,10 @@
 import pprint
 import sys
-import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-import pygame
 
 try:
     import RPi.GPIO as GPIO
@@ -37,72 +35,6 @@ def initialise_data_dir():
     """
     data_dir = set_directory(DATA_DIR)
     return data_dir
-
-
-# Define Servo objects for different types of feed. Can adjust the angles and times if needed
-class Servo_pellets:
-    """
-    A class that controls a servo motor to dispense feed pellets.
-
-    Attributes:
-        servo (object): The servo object used for controlling the servo motor.
-    """
-
-    def __init__(self, servo):
-        """
-        Initialises a Servo_pellets object.
-
-        Args:
-            servo (object): The servo object used for controlling the servo motor.
-        """
-        self.servo = servo
-
-    def dispense_feed_pellets(self):
-        """
-        Controls the servo motor to dispense feed pellets.
-
-        This method sets the servo angle to 80 degrees to dispense the pellets,
-        and then sets it back to 0 degrees to stop the dispensing.
-        """
-        self.servo.angle = 80
-        # print(f"Feed dispensed at: {datetime.now()}") - logging this in the main code
-        time.sleep(0.5)
-        self.servo.angle = 0
-
-
-class Servo_grain:
-    """
-    A class that controls a servo motor to dispense feed grain.
-
-    Args:
-        servo: The servo object used for controlling the servo motor.
-
-    Example Usage:
-        servo = Servo()
-        grain_dispenser = Servo_grain(servo)
-        grain_dispenser.dispense_feed_grain()
-    """
-
-    def __init__(self, servo):
-        """
-        Initialises the Servo_grain object with a servo object.
-
-        Args:
-            servo: The servo object used for controlling the servo motor.
-        """
-        self.servo = servo
-
-    def dispense_feed_grain(self):
-        """
-        Controls the servo motor to dispense feed grain.
-
-        The servo angle is set to 70 degrees to dispense the grain,
-        and then set back to 0 degrees to stop the dispensing.
-        """
-        self.servo.angle = 70
-        # print(f"Feed dispensed at: {datetime.now()}") - logging this in the main code
-        time.sleep(0.5)
-        self.servo.angle = 0
 
 
 class Button:
@@ -186,79 +118,6 @@ def elapsed_seconds(start_time):
     return duration_since_start
 
 
-# Function to play WAV file for a specified duration
-def play_WAV(file_path, duration):
-    """
-    Play a WAV audio file for a specified duration.
-
-    Args:
-        file_path (str): The path to the WAV audio file.
-        duration (float): The duration in seconds for which the audio should be played.
-
-    Returns:
-        None
-
-    Example:
-        play_WAV('audio.wav', 2)
-        This code will play the 'audio.wav' file for 2 seconds.
-    """
-    sound = pygame.mixer.Sound(file_path)
-    sound.play()
-    pygame.time.delay(int(duration * 1000))
-    time.sleep(duration)
-    sound.stop()
-
-
-def initialise_touch_sensor(sensitivity):
-    """
-    Initialises the touch sensor based on the given sensitivity level.
-
-    Args:
-        sensitivity (int): The sensitivity level of the touch sensor.
-
-    Returns:
-        PiicoDev_CAP1203: The initialised touch sensor object.
-    """
-    touch_sensor = PiicoDev_CAP1203(touchmode="single", sensitivity=sensitivity)
-    return touch_sensor
-
-
-def initialise_servo(servo_channel):
-    """
-    Initialises a servo motor.
-
-    Args:
-        servo_channel (int, optional): The channel number of the servo motor.
-
-    Returns:
-        PiicoDev_Servo: The initialised servo motor object.
-    """
-    servo_driver = PiicoDev_Servo_Driver()
-    servo = PiicoDev_Servo(servo_driver, servo_channel)
-    return servo
-
-
-def initialise_sensors(sensitivity, servo_channel, RPi=RPI_MODE):
-    """
-    Initialise the touch sensor and servo motor based on the given sensitivity and servo channel.
-
-    Args:
-        sensitivity (int): The sensitivity level of the touch sensor.
-        servo_channel (int): The channel number of the servo motor.
-        RPi (bool, optional): Indicates if the code is running on a Raspberry Pi. Defaults to RPI_MODE.
-
-    Returns:
-        tuple: A tuple containing the initialised touch sensor and servo motor objects.
-               If not running on a Raspberry Pi, returns (None, None).
-    """
-    if RPi:
-        touch_sensor = initialise_touch_sensor(sensitivity)
-        servo = initialise_servo(servo_channel)
-        return touch_sensor, servo
-    else:
-        return None, None
-
-
 def set_directory(dir_name):
     """
     Check if the input directory exists and return a Path object representing the directory.
@@ -280,28 +139,30 @@ def set_directory(dir_name):
     return Path(dir_name)
 
 
-def create_output_filenames(subject_name, session_number, session_type):
+def create_output_filenames(subject_name, trial_number, trainer_number):
     """
-    Generate the names for the log file and quantity file based on the subject name, session number, and session type.
+    Generate the names for the log file and quantity file based on the subject name, trial number, and trial type.
 
     Args:
         subject_name (str): The name of the subject.
-        session_number (int): The number of the session.
-        session_type (str): The type of the session.
+        trial_number (int): The number of the trial.
+        trainer_number (str): The type of the trial.
 
     Returns:
         tuple: A tuple containing the name of the log file and the name of the quantity file.
 
     Example:
         subject_name = "John"
-        session_number = 1
-        session_type = "preliminary"
-        log_file, quantity_file = create_output_filenames(subject_name, session_number, session_type)
+        trial_number = 1
+        trainer_number = "preliminary"
+        log_file, quantity_file = create_output_filenames(subject_name, trial_number, trainer_number)
         print(log_file)  # Output: Experiment_2022-01-01T12:00:00_John_1_preliminary.log
         print(quantity_file)  # Output: Experiment_2022-01-01T12:00:00_John_1_preliminary.csv
     """
     LOGFILE_PREFIX = "Experiment"
-    file_name = f"{LOGFILE_PREFIX}_{datetime.now().isoformat()}_{subject_name}_{session_number}_{session_type}"
+    file_name = (
+        f"{LOGFILE_PREFIX}_{datetime.now().isoformat()}_{subject_name}_{trial_number}_{trainer_number}"
+    )
     return f"{file_name}.log", f"{file_name}.csv"
 
 
@@ -339,14 +200,13 @@ def log_event(
     return None
 
 
-# date_time,subject_name,session_number,session_type,trial_number,quantity_name,quantity_value
+# date_time,subject_name,trial_number,trainer_number,trial_number,quantity_name,quantity_value
 def log_quantity(
     quantity_name,
     quantity_value,
     subject_name,
-    session_number,
-    session_type,
     trial_number,
+    trainer_number,
     data_dir,
     quantity_file,
     quantity_time=None,
@@ -362,8 +222,8 @@ def log_quantity(
         quantity_name (str): The name of the quantity being logged.
         quantity_value (float or int): The value of the quantity being logged.
         subject_name (str): The name of the subject.
-        session_number (int): The number of the session.
-        session_type (str): The type of the session.
+        trial_number (int): The number of the trial.
+        trainer_number (str): The type of the trial.
         trial_number (int): The number of the trial.
         data_dir (str): The directory where the data is stored.
         quantity_file (str): The name of the quantity file.
@@ -381,7 +241,7 @@ def log_quantity(
     if quantity_time is None:
         quantity_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(Path(data_dir) / quantity_file, "a") as fq:
-        csv_str = f"{quantity_time},{subject_name},{session_number},{session_type},{trial_number},{quantity_name},{quantity_value}\n"
+        csv_str = f"{quantity_time},{subject_name},{trial_number},{trainer_number},{trial_number},{quantity_name},{quantity_value}\n"
         fq.write(csv_str)
     if echo_to_console:
         print(f"Quantity recorded - {quantity_time}: {csv_str}")
@@ -407,7 +267,9 @@ def create_log_quantity_header_file(data_dir, quantity_header_file="experiment_q
     - Write the header string to the file.
     - Print the path of the created quantity header file.
     """
-    quantity_header = "date_time,subject_name,session_number,session_type,trial_number,quantity_name,quantity_value\n"
+    quantity_header = (
+        "date_time,subject_name,trial_number,trainer_number,trial_number,quantity_name,quantity_value\n"
+    )
     with open(Path(data_dir) / quantity_header_file, "w") as fh:
         fh.write(quantity_header)
     print(f"Quantity header file created: {(Path(data_dir) / quantity_header_file).as_posix()}")
@@ -435,16 +297,16 @@ def log_trial_parameters(parameters, data_dir, log_file):
 
 def set_subject_name(data_dir):
     """
-    Prompts the user to enter the subject name and retrieves the next session number for that subject from a tracking file.
+    Prompts the user to enter the subject name and retrieves the next trial number for that subject from a tracking file.
 
     Args:
         data_dir (str): The directory where the tracking file is located.
 
     Returns:
-        tuple: A tuple containing the subject name (str), the next session number (int), and the updated tracking file as a DataFrame.
+        tuple: A tuple containing the subject name (str), the next trial number (int), and the updated tracking file as a DataFrame.
 
     Example:
-        subject_name, next_session_number, experiment_subjects_df = set_subject_name(data_dir)
+        subject_name, next_trial_number, experiment_subjects_df = set_subject_name(data_dir)
     """
 
     subject_name = False
@@ -454,21 +316,23 @@ def set_subject_name(data_dir):
 
     while not subject_name:
         subject_name_in = input("\nEnter subject name: ")
-        subject_name, next_session_number, experiment_subjects_df = get_next_session_number(subject_name_in, data_dir)
-    return subject_name, next_session_number, experiment_subjects_df
+        subject_name, next_trial_number, experiment_subjects_df = get_next_trial_number(
+            subject_name_in, data_dir
+        )
+    return subject_name, next_trial_number, experiment_subjects_df
 
 
-def get_next_session_number(subject_name, data_dir, subjects_file="experiment_subjects.xlsx"):
+def get_next_trial_number(subject_name, data_dir, subjects_file="experiment_subjects.xlsx"):
     """
-    Retrieves the next session number for a given subject name from a tracking file.
+    Retrieves the next trial number for a given subject name from a tracking file.
 
     Args:
-        subject_name (str): The name of the subject for which to retrieve the next session number.
+        subject_name (str): The name of the subject for which to retrieve the next trial number.
         data_dir (str): The directory where the tracking file is located.
         subjects_file (str, optional): The name of the tracking file. Default is "experiment_subjects.xlsx".
 
     Returns:
-        tuple: A tuple containing the subject name, the next session number, and the updated tracking file as a DataFrame.
+        tuple: A tuple containing the subject name, the next trial number, and the updated tracking file as a DataFrame.
 
     Raises:
         FileNotFoundError: If the tracking file does not exist in the specified directory.
@@ -485,19 +349,21 @@ def get_next_session_number(subject_name, data_dir, subjects_file="experiment_su
     subject_names = [name.replace(" ", "") for name in subject_names]
     subject_name_clean = subject_name.lower().replace(" ", "")
     if subject_name_clean not in subject_names:
-        print(f"Subject {subject_name} not found in tracking file.\nSee {(Path(data_dir) / subjects_file).as_posix()}.")
+        print(
+            f"Subject {subject_name} not found in tracking file.\nSee {(Path(data_dir) / subjects_file).as_posix()}."
+        )
         return False, 0, 0
-    next_session_number = (
+    next_trial_number = (
         experiment_subjects_df[experiment_subjects_df["subject_name_clean"] == subject_name_clean][
-            "last_session_number"
+            "last_trial_number"
         ].values[0]
         + 1
     )
     experiment_subjects_df.loc[
         experiment_subjects_df["subject_name_clean"] == subject_name_clean,
-        "last_session_number",
-    ] = next_session_number
-    return subject_name_clean, next_session_number, experiment_subjects_df
+        "last_trial_number",
+    ] = next_trial_number
+    return subject_name_clean, next_trial_number, experiment_subjects_df
 
 
 def update_subjects_xlsx(data_dir, experiment_subjects_df, subjects_file):
@@ -524,55 +390,22 @@ def update_subjects_xlsx(data_dir, experiment_subjects_df, subjects_file):
     return None
 
 
-def choose_session_type():
-    """
-    Allows the user to select an session type from a predefined list.
-
-    Returns:
-        str: The selected session type.
-
-    Example Usage:
-        Choose session type:
-        1 - RPE-A
-        2 - RPE-H
-        3 - RPE-E
-        4 - RPE-R
-
-        Enter session type: 2
-
-        Output: "RPE-H"
-    """
-    session_types = ["RPE-A", "RPE-H", "RPE-E", "RPE-R"]
-    session_choice = 0
-    print("\nChoose session type:")
-    for i, session_type in enumerate(session_types):
-        print(f"{i+1} - {session_type}")
-    while session_choice < 1 or session_choice > len(session_types):
-        try:
-            session_choice = int(input("\nEnter session type: "))
-        except ValueError:
-            session_choice = 0
-    session_type = session_types[session_choice - 1]
-    print()
-    return session_type
-
-
-def confirm_experiment_details(subject_name, session_number, session_type):
+def confirm_experiment_details(subject_name, trial_number, trainer_number):
     """
     Confirms the experiment details with the user.
 
     Args:
         subject_name (str): The name of the subject.
-        session_number (int): The session number.
-        session_type (str): The type of experiment.
+        trial_number (int): The trial number.
+        trainer_number (str): The type of experiment.
 
     Returns:
         True if the user confirms the experiment details are correct, False otherwise.
     """
     print(f"\nSubject name: {subject_name}")
-    print(f"Session number: {session_number}")
-    print(f"Experiment type: {session_type}")
-    confirm = input("\nAre the details ok for this session (Y (or return) - continue / N - exit)?: ")
+    print(f"Trial number: {trial_number}")
+    print(f"Experiment type: {trainer_number}")
+    confirm = input("\nAre the details ok for this trial (Y (or return) - continue / N - exit)?: ")
     if confirm == "" or confirm.lower()[0] == "y":
         return True
     else:
@@ -673,7 +506,10 @@ def load_validate_experiment_parameters(data_dir, parameters_xlsx="experiment_pa
             else:
                 # check if parameter is numeric
                 if isinstance(parameter.val, (int, float)):
-                    if parameter.val < parameter.minimum_value or parameter.val > parameter.maximum_value:
+                    if (
+                        parameter.val < parameter.minimum_value
+                        or parameter.val > parameter.maximum_value
+                    ):
                         print(f"{parameter.name} is out of range: {parameter.val} {parameter.unit}")
                     print(f"{parameter.name}: {parameter.val} {parameter.unit} - Validated")
                 else:
@@ -681,6 +517,48 @@ def load_validate_experiment_parameters(data_dir, parameters_xlsx="experiment_pa
                 par[name] = parameter.val
     return par
 
+def read_experiment_schedule(schedule_xlsx="exp_phase2_schedule.xlsx", data_dir=DATA_DIR):
+    """
+    Reads the RewardSchedule and TrainerSchedule tables from an Excel workbook into DataFrames.
+
+    Args:
+        schedule_xlsx (str, optional): The name of the Excel file containing the schedules.
+        data_dir (str, optional): The directory where the experiment data is stored.
+
+    Returns:
+        tuple: A tuple containing the DataFrames for RewardSchedule and TrainerSchedule.
+    """
+    schedule_xlsx_path = Path(data_dir) / schedule_xlsx
+    if not schedule_xlsx_path.exists():
+        raise FileNotFoundError(f"{schedule_xlsx_path} does not exist")
+
+    # Read the RewardSchedule table
+    reward_schedule_df = pd.read_excel(
+        schedule_xlsx_path,
+        sheet_name='ExperimentSchedule',
+        skiprows=8,  # Skip rows before the header row
+        nrows=21,    # Number of rows to read, excluding the header
+        usecols="A:G"  # Columns to read
+    )
+
+    # Read the TrainerSchedule table
+    trainer_schedule_df = pd.read_excel(
+        schedule_xlsx_path,
+        sheet_name='ExperimentSchedule',
+        skiprows=31,  # Skip rows before the header row
+        nrows=21,     # Number of rows to read, excluding the header
+        usecols="A:G"  # Columns to read
+    )
+
+    # Convert boolean columns to actual booleans for RewardSchedule
+    for col in reward_schedule_df.columns[1:]:  # Assuming the first column is not boolean
+        reward_schedule_df[col] = reward_schedule_df[col].apply(pd.to_numeric, downcast='unsigned', errors='coerce').astype('bool')
+
+    # Convert label columns to integers for TrainerSchedule
+    for col in trainer_schedule_df.columns[1:]:  # Assuming the first column is not labels
+        trainer_schedule_df[col] = trainer_schedule_df[col].apply(pd.to_numeric, downcast='integer', errors='coerce').fillna(0).astype(int)
+
+    return reward_schedule_df, trainer_schedule_df
 
 def setup_experiment(data_dir=DATA_DIR):
     """
@@ -690,31 +568,31 @@ def setup_experiment(data_dir=DATA_DIR):
         data_dir (str, optional): The directory where the experiment data will be stored.
 
     Returns:
-        tuple: A tuple containing the subject name, session number, session type, experiment parameters, touch sensor object, servo motor object, data directory, log file name, and quantity file name.
+        tuple: A tuple containing the subject name, trial number, trial type, experiment parameters, touch sensor object, servo motor object, data directory, log file name, and quantity file name.
 
     Example:
-        subject_name, session_number, session_type, p, touchSensor, servo, data_dir, log_file, quantity_file = setup_experiment()
+        subject_name, trial_number, trainer_number, p, touchSensor, servo, data_dir, log_file, quantity_file = setup_experiment()
 
     """
-    pygame.mixer.init()  # Initialise the mixer module for playing WAV files
+
+    #TODO - read in Experiment schedule
+
     data_dir = initialise_data_dir()
     create_log_quantity_header_file(data_dir)
     p = load_validate_experiment_parameters(data_dir)
-    touchSensor, servo = initialise_sensors(p["SENSITIVITY"], p["SERVO_CHANNEL"])
-    subject_name, session_number, experiment_subjects_df = set_subject_name(data_dir)
-    session_type = choose_session_type()
-    if not confirm_experiment_details(subject_name, session_number, session_type):
-        print("\nExiting - user terminated session...\n")
+    subject_name, trial_number, experiment_subjects_df = set_subject_name(data_dir)
+    if not confirm_experiment_details(subject_name, trial_number, trainer_number):
+        print("\nExiting - user terminated trial...\n")
         sys.exit()
     update_subjects_xlsx(data_dir, experiment_subjects_df, subjects_file="experiment_subjects.xlsx")
-    log_file, quantity_file = create_output_filenames(subject_name, session_number, session_type)
+    log_file, quantity_file = create_output_filenames(subject_name, trial_number, trainer_number)
     log_trial_parameters(p, data_dir, log_file)
-    comment = input("\nEnter any comments for this session: ")
+    comment = input("\nEnter any comments for this trial: ")
     if comment == "":
         comment = "None"
     log_event(f"Comment: {comment}", data_dir, log_file)
     log_event(f"Data directory: {data_dir}", data_dir, log_file)
     log_event(f"Log file: {log_file}", data_dir, log_file)
     log_event(f"Quantity file: {quantity_file}", data_dir, log_file)
-    log_event(f"Subject {subject_name} - Session {session_number} started...", data_dir, log_file)
-    return subject_name, session_number, session_type, p, touchSensor, servo, data_dir, log_file, quantity_file
+    log_event(f"Subject {subject_name}; Trial # {trial_number}; Trainer #{trainer_number} started...", data_dir, log_file)
+    return subject_name, trial_number, trainer_number, p, data_dir, log_file, quantity_file
