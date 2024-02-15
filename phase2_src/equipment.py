@@ -26,12 +26,12 @@ class Equipment:
             print("INFO: Using real buttons")
         else:
             print("INFO: Running in TEST mode")
-            print("INFO: Using keys (G - green, B - blue, R - red) to simulate buttons")
+            print("INFO: Using keys (g - green, b - blue, r - red) to simulate buttons")
             self.start_keyboard_listener()
         # Dependencies with their respective installation commands
         self.dependencies = {
-            "espeak": "sudo apt-get install espeak",
-            "ffmpeg": "sudo apt-get install ffmpeg",
+            "espeak": {"install": "sudo apt-get install espeak", "version_cmd": ["espeak", "--version"]},
+            "ffmpeg": {"install": "sudo apt-get install ffmpeg", "version_cmd": ["ffmpeg", "-version"]},
         }
 
     def check_if_rpi(self):
@@ -84,7 +84,7 @@ class Equipment:
                 if self.button_press_callbacks["red"]:
                     self.button_press_callbacks["red"]()
 
-        listener = Listener(on_press=on_press)
+        listener = Listener(on_press=on_press, suppress=True)
         listener.start()
 
     def register_button_callback(self, button_colour, callback):
@@ -96,33 +96,58 @@ class Equipment:
 
     def check_non_python_dependencies(self):
         """Checks if specified command-line dependencies are installed,
-        printing instructions for installation if any are missing."""
-        for command, install_command in self.dependencies.items():
+        printing instructions for installation if any are missing.
+        Returns False if any dependency is missing, True otherwise."""
+        all_dependencies_installed = True
+        for command, info in self.dependencies.items():
             try:
                 subprocess.run(
-                    [command, "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    info["version_cmd"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 print(f"INFO: {command} is installed.")
             except subprocess.CalledProcessError:
-                print(f"ERROR: {command} is not installed. Please install it using: '{install_command}'")
+                print(f"ERROR: {command} is not installed. Please install it using: '{info['install']}'")
+                all_dependencies_installed = False
+        return all_dependencies_installed
 
-    def check(self):
-        """Test the equipment setup, including button press detection."""
+    def check(self, max_duration_seconds=10):
+        """Test the equipment setup, including button press detection.
+        Displays a timeout progress bar while waiting for a button/key press."""
         print("\nINFO: Testing equipment setup...")
         print("      - Checking command line (non-Python) dependencies")
-        self.check_non_python_dependencies()
 
-        # TODO: Add actual testing here of buttons and keys (if TEST mode)
+        if not self.check_non_python_dependencies():
+            print("ERROR: Missing dependencies. Exiting test.")
+            return  # Exit the method if dependencies are missing
 
         # Temporarily override callbacks for testing
         original_callbacks = self.button_press_callbacks.copy()
-        for colour in self.button_press_callbacks.keys():
-            self.button_press_callbacks[colour] = lambda colour=colour: print(
-                f" {colour.capitalize()} button detected!"
-            )
+        button_pressed_flag = False
 
-        print("Testing buttons for 10 seconds. Press the buttons now...")
-        time.sleep(10)  # Adjust time as needed for testing
+        def test_callback(colour):
+            nonlocal button_pressed_flag
+            print(f"\nINFO: {colour.capitalize()} button/key detected!")
+            button_pressed_flag = True
+
+        for colour in self.button_press_callbacks.keys():
+            button_pressed_flag = False  # Reset flag for each button
+            print(f"\nPlease press the {colour} button/key now...")
+            print("Progress: ", end="")
+
+            # Override the callback for the current button to provide immediate feedback
+            self.button_press_callbacks[colour] = lambda colour=colour: test_callback(colour)
+
+            # Display progress bar
+            progress_length = 30  # Length of the progress bar
+            start_time = time.time()
+            while time.time() - start_time < max_duration_seconds and not button_pressed_flag:
+                elapsed_time = time.time() - start_time
+                progress = int((elapsed_time / max_duration_seconds) * progress_length)
+                print("#" * progress + "-" * (progress_length - progress), end="\r")
+                time.sleep(0.1)  # Short sleep to reduce CPU usage while waiting
+
+            if not button_pressed_flag:
+                print(f"\nWARNING: No {colour} button/key press detected.")
 
         # Restore original callbacks
         self.button_press_callbacks = original_callbacks
