@@ -9,7 +9,29 @@
 
 import sys
 import platform
-import pkg_resources
+
+try:
+    # Python 3.8 and newer
+    from importlib.metadata import distributions
+except ImportError:
+    # Python 3.7 and older
+    try:
+        from importlib_metadata import distributions
+    except ImportError:
+        print("The required module 'importlib_metadata' is not installed.")
+        print("To install it, run: pip install importlib_metadata")
+        raise SystemExit
+
+
+def get_installed_packages():
+    # Get the list of installed distributions
+    installed_packages = [f"{dist.metadata['Name']}=={dist.version}" for dist in distributions()]
+    # Sort the list of installed packages alphabetically
+    installed_packages.sort()
+    # Join the list into a single string with each package on a new line, without a comma
+    installed_packages_str = "\n".join(installed_packages)
+    # Return the formatted string of installed packages
+    return installed_packages_str
 
 
 # Define a function to get the python version, platform information and installed packages
@@ -19,7 +41,7 @@ def get_system_info():
     # Get the platform information
     platform_info = platform.platform()
     # Get the installed packages
-    installed_packages = [f"\n{str(d)}" for d in pkg_resources.working_set]
+    installed_packages = get_installed_packages()
     # Return a tuple of the results
     return (python_version, platform_info, installed_packages)
 
@@ -29,26 +51,23 @@ def write_system_info_to_file(filename):
     # Open the file in write mode
     with open(filename, "w") as f:
         # Get the system info
-        system_info = get_system_info()
-        # Write the python version
-        f.write(f"Python version: {system_info[0]}\n")
-        # Write the platform information
-        f.write(f"Platform information: {system_info[1]}\n")
-        # Write the installed packages
-        f.write(f"Installed packages: {', '.join(system_info[2])}\n")
+        python_version, platform_info, installed_packages_str = get_system_info()
+        f.write(f"Python version: {python_version}\n")
+        f.write(f"Platform information: {platform_info}\n")
+        f.write(f"Installed packages:\n{installed_packages_str}\n")
     print(f"\nPython info also written to: {filename}\n")
 
 
 # Define a function to echo the system info to the console
 def echo_system_info():
     # Get the system info
-    system_info = get_system_info()
+    python_version, platform_info, installed_packages_str = get_system_info()
     # Print the python version
-    print(f"Python version: {system_info[0]}")
+    print(f"Python version: {python_version}\n")
     # Print the platform information
-    print(f"Platform information: {system_info[1]}")
+    print(f"Platform information: {platform_info}\n")
     # Print the installed packages
-    print(f"Installed packages: {', '.join(system_info[2])}")
+    print(f"\nInstalled packages:\n{installed_packages_str}")
 
 
 # Call the functions
