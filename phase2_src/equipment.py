@@ -2,6 +2,10 @@ import subprocess
 from pynput.keyboard import Key, Listener
 import time
 
+from rich.console import Console
+
+console = Console()  # Create a Rich console object
+
 
 class Equipment:
     """The Equipment class is designed to facilitate equipment testing
@@ -17,16 +21,18 @@ class Equipment:
         self.button_press_callbacks = {"green": None, "blue": None, "red": None}
 
         if self.is_rpi:
-            print("INFO: RasberryPi detected")
+            console.print("[bold]INFO:[/bold] RasberryPi detected")
         else:
-            print("INFO: Running on non-RaspberryPi device")
+            console.print("[bold]INFO:[/bold] Running on non-RaspberryPi device")
 
         if self.is_rpi and not self.test_mode:
             self.setup_buttons()
-            print("INFO: Using real buttons")
+            console.print("[bold]INFO:[/bold] Using real buttons")
         else:
-            print("INFO: Running in TEST mode")
-            print("INFO: Using keys (g - green, b - blue, r - red) to simulate buttons")
+            console.print("[bold]INFO:[/bold] Running in TEST mode")
+            console.print(
+                "[bold]INFO:[/bold] Using keys (g - green, b - blue, r - red) to simulate buttons"
+            )
             self.start_keyboard_listener()
         # Dependencies with their respective installation commands
         self.dependencies = {
@@ -104,53 +110,66 @@ class Equipment:
                 subprocess.run(
                     info["version_cmd"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
-                print(f"INFO: {command} is installed.")
+                console.print(f"[bold]INFO:[/bold] {command} is installed.")
             except subprocess.CalledProcessError:
-                print(f"ERROR: {command} is not installed. Please install it using: '{info['install']}'")
+                console.print(
+                    f"ERROR: {command} is not installed. Please install it using: '{info['install']}'"
+                )
                 all_dependencies_installed = False
         return all_dependencies_installed
 
-    def check(self, max_duration_seconds=10):
+    def check(self, max_duration_seconds=10, progress_length=50):
         """Test the equipment setup, including button press detection.
-        Displays a timeout progress bar while waiting for a button/key press."""
-        print("\nINFO: Testing equipment setup...")
-        print("      - Checking command line (non-Python) dependencies")
+        Reports success only if all three button/key presses are detected."""
+        console.print("\n[bold]INFO:[/bold] Testing equipment setup...")
+        console.print("      - Checking command line (non-Python) dependencies")
 
         if not self.check_non_python_dependencies():
-            print("ERROR: Missing dependencies. Exiting test.")
+            console.print("[bold red]ERROR:[/bold red] Missing dependencies. Exiting test.")
             return  # Exit the method if dependencies are missing
 
         # Temporarily override callbacks for testing
         original_callbacks = self.button_press_callbacks.copy()
-        button_pressed_flag = False
+        pressed_buttons = set()  # To track successfully pressed buttons
 
         def test_callback(colour):
-            nonlocal button_pressed_flag
-            print(f"\nINFO: {colour.capitalize()} button/key detected!")
-            button_pressed_flag = True
+            nonlocal pressed_buttons
+            pressed_buttons.add(colour)
+            console.print(f"\n[bold]{colour.capitalize()}[/bold] button/key detected!", style=colour)
 
         for colour in self.button_press_callbacks.keys():
-            button_pressed_flag = False  # Reset flag for each button
-            print(f"\nPlease press the {colour} button/key now...")
-            print("Progress: ", end="")
+            console.print(f"\nPlease press the [bold]{colour}[/bold] button/key now...", style=colour)
+            console.print("Progress: ", end="")
 
             # Override the callback for the current button to provide immediate feedback
             self.button_press_callbacks[colour] = lambda colour=colour: test_callback(colour)
 
-            # Display progress bar
-            progress_length = 30  # Length of the progress bar
+            # Display progress bar and wait for button press or timeout
+
             start_time = time.time()
-            while time.time() - start_time < max_duration_seconds and not button_pressed_flag:
+            while time.time() - start_time < max_duration_seconds and colour not in pressed_buttons:
                 elapsed_time = time.time() - start_time
                 progress = int((elapsed_time / max_duration_seconds) * progress_length)
-                print("#" * progress + "-" * (progress_length - progress), end="\r")
-                time.sleep(0.1)  # Short sleep to reduce CPU usage while waiting
+                console.print(
+                    "#" * progress + "-" * (progress_length - progress), end="\r", style=colour
+                )
+                time.sleep(0.1)
 
-            if not button_pressed_flag:
-                print(f"\nWARNING: No {colour} button/key press detected.")
+            if colour not in pressed_buttons:
+                console.print(
+                    f"\n[bold yellow]WARNING:[/bold yellow] No {colour} button/key press detected.",
+                    style=colour,
+                )
 
         # Restore original callbacks
         self.button_press_callbacks = original_callbacks
+
+        # Check if all buttons were pressed
+        if len(pressed_buttons) == len(self.button_press_callbacks):
+            console.print("\n[bold green]SUCCESS:[/bold green] All button/key presses detected.")
+            console.print("\n[bold]INFO:[/bold] Testing completed - [bold green]OK[/bold green]")
+        else:
+            console.print("\n[bold red]FAILURE:[/bold red] Not all button/key presses were detected.")
 
 
 if __name__ == "__main__":
