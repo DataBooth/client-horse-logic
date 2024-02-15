@@ -15,7 +15,7 @@ from experiment_helper import (
     set_subject_name,
     update_subjects_xlsx,
 )
-from hardware_tester import HardwareTester
+from equipment import HardwareTester
 from text_to_speech import TextToSpeechGoogle
 from toml import load as toml_load
 
