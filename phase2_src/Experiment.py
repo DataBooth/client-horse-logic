@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from control import ExperimentControl
 
 import pandas as pd
 from experiment_helper import (
@@ -20,24 +21,26 @@ from toml import load as toml_load
 
 
 class Experiment:
-    def __init__(self, config_path, data_dir):
+    def __init__(self, config_path="config.toml", data_dir=None):
         self.config = self.load_config(config_path)
         self.data_dir = initialise_data_dir(data_dir)
         self.tts = TextToSpeechGoogle()
         self.hardware_tester = HardwareTester()
         self.gpio, self.green_button, self.blue_button, self.red_button = initialise_GPIO_buttons()
         self.trainer_schedule, self.reward_schedule = self.load_and_validate_schedules()
-        self.logger = Logger(data_dir=self.data_dir,
-                             log_file_name="experiment_log.txt",
-                             quantity_file_name="experiment_quantity.csv",
-                             tts=self.tts,
-                             echo=True,
-                             speak=True)
+        self.logger = Logger(
+            data_dir=self.data_dir,
+            log_file_name="experiment_log.txt",
+            quantity_file_name="experiment_quantity.csv",
+            tts=self.tts,
+            echo=True,
+            speak=True,
+        )
+        self.hardware_tester = HardwareTester()
+        self.setup_button_callbacks()
 
     def load_config(self, config_path):
         return toml_load(config_path)
-
-
 
     def load_and_validate_schedules(self):
         trainer_schedule_df, reward_schedule_df = read_experiment_schedule(data_dir=self.data_dir)
@@ -49,6 +52,23 @@ class Experiment:
             raise ValueError("Trainer schedule does not have the expected number of rows.")
         # Repeat validation for reward_schedule_df
         return trainer_schedule_df, reward_schedule_df
+
+    def setup_button_callbacks(self):
+        self.hardware_tester.register_button_callback("green", self.on_green_button_press)
+        self.hardware_tester.register_button_callback("blue", self.on_blue_button_press)
+        self.hardware_tester.register_button_callback("red", self.on_red_button_press)
+
+    def on_green_button_press(self):
+        print("Green button pressed")
+        # Handle green button press
+
+    def on_blue_button_press(self):
+        print("Blue button pressed")
+        # Handle blue button press
+
+    def on_red_button_press(self):
+        print("Red button pressed")
+        # Handle red button press
 
     def wait_for_green_button(self):
         print("Waiting for green button to start the trial...")
@@ -66,7 +86,6 @@ class Experiment:
         # Initialize the system for a new day
         pass
 
-
     def start_trial(self, trial_number, trainer, reward):
         self.tts.speak(
             f"Starting trial {trial_number} with trainer {trainer}. Reward: {'Yes' if reward else 'No'}"
@@ -76,11 +95,12 @@ class Experiment:
         # Complete the session and log the completion
         pass
 
-
     def run_experiment(self):
         self.start_day()
         self.logger.log_event("Experiment started")
-        self.logger.log_quantity("Some quantity test", 1.23, self.subject_name, trial_number, trainer_number)
+        self.logger.log_quantity(
+            "Some quantity test", 1.23, self.subject_name, trial_number, trainer_number
+        )
 
         for trial in range(1, 21):
             trainer, reward = self.determine_trainer_and_reward(trial)
@@ -92,3 +112,17 @@ class Experiment:
                 self.wait_for_green_button()  # Wait for green button to continue
         self.complete_session()
         self.tts.speak("The session is completed.")
+
+
+from experiment_control import ExperimentControl
+
+
+def main():
+    # Initialize the experiment control system
+    experiment_control = ExperimentControl()
+
+    # Optionally, check for command-line arguments or configuration settings
+    # to determine mode (test mode, normal mode, etc.)
+
+    # Start the experiment
+    experiment_control.start_experiment()
