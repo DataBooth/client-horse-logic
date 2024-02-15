@@ -4,11 +4,16 @@
 # python show_python_info.py
 #
 # or double-click on the file if your operating system supports it.
-# The script will create a text file named python_info.txt in the same folder as
-# the script and also print the same information to the console.
+#
+# The script returns the Python version, platform information, and installed packages,
+# outputting this information both to the console and a text file (python_info.txt)
+# in the same folder as the script.
 
 import sys
 import platform
+
+# The script includes the following error handling for missing importlib_metadata
+# in environments using Python versions older than 3.8.
 
 try:
     # Python 3.8 and newer
