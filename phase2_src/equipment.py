@@ -8,6 +8,20 @@ from text_to_speech import TextToSpeechGoogle
 console = Console()  # Create a Rich console object
 
 
+# import threading
+# def tts_test():
+#     try:
+#         tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
+#         user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
+#         if user_response[0] != "y":
+#             console.print("[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message.")
+#     except Exception as e:
+#         console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
+
+# # Run the TTS test in a separate thread
+# tts_thread = threading.Thread(target=tts_test)
+# tts_thread.start()
+
 class Equipment:
     """The Equipment class is designed to facilitate equipment testing
     on a Raspberry Pi (RPi) or simulate the same environment on other
@@ -145,23 +159,6 @@ class Equipment:
             console.print("[bold red]ERROR:[/bold red] Missing dependencies. Exiting test.")
             return  # Exit the method if dependencies are missing
 
-        # Initialize the TextToSpeechGoogle class for the TTS functionality check
-        tts_google = TextToSpeechGoogle()
-
-        # Perform the TTS functionality check
-        try:
-            tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
-            user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
-            if user_response[0] != "y":
-                console.print(
-                    "[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message."
-                )
-                return  # Exit the method if the user did not confirm hearing the TTS message
-            console.print("[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed.")
-        except Exception as e:
-            console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
-            return  # Exit the method if the TTS check fails due to an exception
-
         # Temporarily override callbacks for testing
         original_callbacks = self.button_press_callbacks.copy()
         pressed_buttons = set()  # To track successfully pressed buttons
@@ -204,6 +201,24 @@ class Equipment:
             console.print("\n[bold]INFO:[/bold] Testing completed - [bold green]OK[/bold green]")
         else:
             console.print("\n[bold red]FAILURE:[/bold red] Not all button/key presses were detected.")
+
+
+        # Initialize the TextToSpeechGoogle class for the TTS functionality check
+        tts_google = TextToSpeechGoogle()
+
+        # Perform the TTS functionality check
+        try:
+            tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
+            user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
+            if user_response[0] != "y":
+                console.print(
+                    "[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message."
+                )
+                return  # Exit the method if the user did not confirm hearing the TTS message
+            console.print("[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed.")
+        except Exception as e:
+            console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
+            return  # Exit the method if the TTS check fails due to an exception
 
 
 if __name__ == "__main__":
