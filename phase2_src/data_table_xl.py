@@ -3,6 +3,9 @@ import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 from pathlib import Path
 
+INFO_SHEET_NAME = "Info"
+
+
 class DataManagerXL:
     def __init__(self, workbook):
         self.workbook = Path(workbook)
@@ -17,12 +20,28 @@ class DataManagerXL:
         except FileNotFoundError:
             raise Exception(f"The workbook {self.workbook} does not exist or is not accessible.")
 
-    def read_table_data(self, sheet_name, use_first_col_as_index=False, rows=None, columns=None, range=None, types=None):
+    def read_table_data(
+        self,
+        sheet_name,
+        skip_info_sheet=True,
+        use_first_col_as_index=False,
+        rows=None,
+        columns=None,
+        range=None,
+        types=None,
+    ):
         # Check if the workbook exists and is accessible
         try:
             wb = openpyxl.load_workbook(self.workbook)
         except FileNotFoundError:
             raise Exception(f"The workbook {self.workbook} does not exist or is not accessible.")
+
+        # Skip reading the Info sheet if skip_info_sheet is True
+        if skip_info_sheet and sheet_name == INFO_SHEET_NAME:
+            print(
+                f"INFO: Skipping the '{INFO_SHEET_NAME}' worksheet. If unintended set skip_info_sheet=False in read_table_data method."
+            )
+            return None  # Or appropriate response indicating no data was read
 
         # Ensure a sheet name is provided
         if sheet_name is None:
@@ -30,7 +49,9 @@ class DataManagerXL:
 
         # Check if the sheet name exists in the workbook
         if sheet_name not in wb.sheetnames:
-            raise Exception(f"The sheet name {sheet_name} does not exist in the workbook {self.workbook}.")
+            raise Exception(
+                f"The sheet name {sheet_name} does not exist in the workbook {self.workbook}."
+            )
 
         # Preliminary read of the data to facilitate debugging
         try:
@@ -40,10 +61,18 @@ class DataManagerXL:
 
         # Example check: Sheet is empty
         if df_debug.empty:
-            raise Exception(f"The sheet {sheet_name} in the workbook {self.workbook} is empty. Data preview: \n{df_debug.head(2)}")
+            raise Exception(
+                f"The sheet {sheet_name} in the workbook {self.workbook} is empty. Data preview: \n{df_debug.head(2)}"
+            )
 
         # Adjust the read_excel call based on use_first_col_as_index and other parameters
-        usecols = range(0, columns + 1) if use_first_col_as_index else range(1, columns + 1) if columns is not None else None
+        usecols = (
+            range(0, columns + 1)
+            if use_first_col_as_index
+            else range(1, columns + 1)
+            if columns is not None
+            else None
+        )
         try:
             df = pd.read_excel(
                 self.workbook,
@@ -51,10 +80,12 @@ class DataManagerXL:
                 header=0,
                 index_col=0 if use_first_col_as_index else None,
                 nrows=rows,
-                usecols=usecols
+                usecols=usecols,
             )
         except Exception as e:
-            raise Exception(f"Failed to read sheet {sheet_name} with specified parameters: {str(e)}\nData preview: \n{df_debug.head(2)}")
+            raise Exception(
+                f"Failed to read sheet {sheet_name} with specified parameters: {str(e)}\nData preview: \n{df_debug.head(2)}"
+            )
 
         # Check if the list of column types is valid and matches the data types of the columns
         if types is not None:
@@ -72,9 +103,7 @@ class DataManagerXL:
                             f"The column type {t} does not match the data type of the column {df.columns[i]}. Data preview: \n{df.head(2)}"
                         )
 
-        # Return the dataframe
         return df
-
 
     # A method that exports every table from each worksheet in a workbook into CSV format
     def export_excel_data(self):
@@ -159,7 +188,9 @@ class DataManagerXL:
         wb.save(workbook_path)
         print(f"Created a workbook {workbook_path} based on the tables in CSV files {files}.")
 
+
 # Lookup helper functions
+
 
 def lookup_by_index(df, index, column_name):
     try:
@@ -167,6 +198,7 @@ def lookup_by_index(df, index, column_name):
         return value
     except KeyError:
         return "Index or column name not found."
+
 
 def lookup_by_row_value(df, search_column, search_value, target_column):
     filtered_df = df[df[search_column] == search_value]
@@ -181,7 +213,9 @@ def lookup_by_row_value(df, search_column, search_value, target_column):
 
 
 if __name__ == "__main__":
-    data_manager = DataManagerXL(workbook='path/to/workbook.xlsx')
+    data_manager = DataManagerXL(workbook="path/to/workbook.xlsx")
 
     # Reading data from a specific sheet with custom configurations
-    table_data = data_manager.read_table_data(sheet_name='Sheet1', use_first_col_as_index=True, rows=100, columns=5)
+    table_data = data_manager.read_table_data(
+        sheet_name="Sheet1", use_first_col_as_index=True, rows=100, columns=5
+    )

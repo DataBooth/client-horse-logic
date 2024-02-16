@@ -1,8 +1,9 @@
 import subprocess
-from pynput.keyboard import Key, Listener
 import time
 
+from pynput.keyboard import Key, Listener
 from rich.console import Console
+from text_to_speech import TextToSpeechGoogle
 
 console = Console()  # Create a Rich console object
 
@@ -21,9 +22,16 @@ class Equipment:
         self.button_press_callbacks = {"green": None, "blue": None, "red": None}
 
         if self.is_rpi:
-            console.print("[bold]INFO:[/bold] RasberryPi detected")
+            try:
+                global GPIO
+                import RPi.GPIO as GPIO
+
+                print("[bold]INFO:[/bold] RPi.GPIO module imported successfully.")
+            except ImportError:
+                print("[bold]ERROR:[/bold] RPi.GPIO module not found. Running in non-RPi mode.")
+                self.is_rpi = False  # Ensure is_rpi reflects the availability of RPi.GPIO
         else:
-            console.print("[bold]INFO:[/bold] Running on non-RaspberryPi device")
+            print("[bold]INFO:[/bold] Not running on Raspberry Pi. Running in non-RPi mode.")
 
         if self.is_rpi and not self.test_mode:
             self.setup_buttons()
@@ -34,7 +42,7 @@ class Equipment:
                 "[bold]INFO:[/bold] Using keys (g - green, b - blue, r - red) to simulate buttons"
             )
             self.start_keyboard_listener()
-        # Dependencies with their respective installation commands
+        # Dependencies with their respective installation commands - TODO: Not sure these are needed by PyGame
         self.dependencies = {
             "espeak": {"install": "sudo apt-get install espeak", "version_cmd": ["espeak", "--version"]},
             "ffmpeg": {"install": "sudo apt-get install ffmpeg", "version_cmd": ["ffmpeg", "-version"]},
@@ -55,6 +63,11 @@ class Equipment:
         """Configures GPIO pins on the RPi for button inputs,
         setting them up with pull-up resistors and registering
         event detection for button presses."""
+        if not self.is_rpi:
+            print("GPIO setup is not available on non-RPi hardware.")
+            return
+
+        # RPi-specific GPIO setup code...
         GPIO.setmode(GPIO.BCM)
         # Define GPIO pins for the buttons
         self.button_pins = {"green": 6, "blue": 7, "red": 12}
@@ -121,12 +134,33 @@ class Equipment:
     def check(self, max_duration_seconds=10, progress_length=50):
         """Test the equipment setup, including button press detection.
         Reports success only if all three button/key presses are detected."""
+        if self.is_rpi:
+            console.print("\n[bold red]INFO: Running on RaspberryPi device[/bold red]")
+        else:
+            console.print("\n[bold]INFO: Running on non-RaspberryPi device[/bold]")
         console.print("\n[bold]INFO:[/bold] Testing equipment setup...")
         console.print("      - Checking command line (non-Python) dependencies")
 
         if not self.check_non_python_dependencies():
             console.print("[bold red]ERROR:[/bold red] Missing dependencies. Exiting test.")
             return  # Exit the method if dependencies are missing
+
+        # Initialize the TextToSpeechGoogle class for the TTS functionality check
+        tts_google = TextToSpeechGoogle()
+
+        # Perform the TTS functionality check
+        try:
+            tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
+            user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
+            if user_response[0] != "y":
+                console.print(
+                    "[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message."
+                )
+                return  # Exit the method if the user did not confirm hearing the TTS message
+            console.print("[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed.")
+        except Exception as e:
+            console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
+            return  # Exit the method if the TTS check fails due to an exception
 
         # Temporarily override callbacks for testing
         original_callbacks = self.button_press_callbacks.copy()
