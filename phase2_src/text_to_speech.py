@@ -1,11 +1,18 @@
-# import pyttsx3
-from time import sleep
-from gtts import gTTS
-import socket
 import hashlib
 import os
+import socket
+from time import sleep
 
-from playsound import playsound
+import pygame
+from gtts import gTTS
+
+
+def play_sound_with_pygame(file_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():  # Wait for audio to finish playing
+        pygame.time.Clock().tick(10)
 
 
 class TextToSpeechGoogle:
@@ -41,7 +48,7 @@ class TextToSpeechGoogle:
             print("Using cached audio file.")
 
         print(text)  # Echo the text to the screen
-        playsound(cache_filename)
+        play_sound_with_pygame(cache_filename)
 
     def speak_trial_info(
         self, day_number, trial_number, reward_given=False, reward_amount=None, trainer=1
