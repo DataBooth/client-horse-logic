@@ -9,8 +9,6 @@ from text_to_speech import TextToSpeechGoogle
 console = Console()  # Create a Rich console object
 
 
-
-
 class Equipment:
     """The Equipment class is designed to facilitate equipment testing
     on a Raspberry Pi (RPi) or simulate the same environment on other
@@ -24,7 +22,6 @@ class Equipment:
         self.test_mode = test_mode or not self.is_rpi
         self.button_press_callbacks = {"green": None, "blue": None, "red": None}
         self.keyboard_listener = None  # Initialize the listener reference
-
 
         if self.is_rpi:
             try:
@@ -147,12 +144,15 @@ class Equipment:
             tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
             user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
             if user_response[0] != "y":
-                console.print("[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message.")
+                console.print(
+                    "[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message."
+                )
             else:
-                console.print("[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed.")
+                console.print(
+                    "[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed."
+                )
         except Exception as e:
             console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
-
 
     def check(self, max_duration_seconds=10, progress_length=50):
         """Test the equipment setup, including button press detection.
@@ -220,6 +220,7 @@ class Equipment:
 
         # Optionally, wait for the TTS test to complete before proceeding
         tts_thread.join()
+
 
 if __name__ == "__main__":
     equipment = Equipment(test_mode=True)
