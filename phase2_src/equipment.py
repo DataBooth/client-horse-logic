@@ -1,4 +1,5 @@
 import subprocess
+import threading
 import time
 
 from pynput.keyboard import Key, Listener
@@ -8,19 +9,7 @@ from text_to_speech import TextToSpeechGoogle
 console = Console()  # Create a Rich console object
 
 
-# import threading
-# def tts_test():
-#     try:
-#         tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
-#         user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
-#         if user_response[0] != "y":
-#             console.print("[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message.")
-#     except Exception as e:
-#         console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
 
-# # Run the TTS test in a separate thread
-# tts_thread = threading.Thread(target=tts_test)
-# tts_thread.start()
 
 class Equipment:
     """The Equipment class is designed to facilitate equipment testing
@@ -94,7 +83,6 @@ class Equipment:
     def button_pressed(self, channel):
         """Callback function for real button presses, determining which button
         was pressed and invoking the registered callback for that button."""
-        # Determine which button was pressed based on the channel and call the registered callback
         for colour, pin in self.button_pins.items():
             if channel == pin:
                 callback = self.button_press_callbacks.get(colour)
@@ -120,6 +108,12 @@ class Equipment:
         listener = Listener(on_press=on_press, suppress=True)
         listener.start()
 
+    def stop_keyboard_listener(self):
+        """Stops the keyboard listener if it's running."""
+        if self.keyboard_listener is not None:
+            self.keyboard_listener.stop()
+            self.keyboard_listener = None
+
     def register_button_callback(self, button_colour, callback):
         """Allows other parts of the code to register callback functions
         for specific button colours (green, blue, red).
@@ -144,6 +138,19 @@ class Equipment:
                 )
                 all_dependencies_installed = False
         return all_dependencies_installed
+
+    def tts_test(self):
+        try:
+            tts_google = TextToSpeechGoogle()
+            tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
+            user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
+            if user_response[0] != "y":
+                console.print("[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message.")
+            else:
+                console.print("[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed.")
+        except Exception as e:
+            console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
+
 
     def check(self, max_duration_seconds=10, progress_length=50):
         """Test the equipment setup, including button press detection.
@@ -202,24 +209,15 @@ class Equipment:
         else:
             console.print("\n[bold red]FAILURE:[/bold red] Not all button/key presses were detected.")
 
+        # Stop the keyboard listener before the TTS test
+        self.stop_keyboard_listener()
 
-        # Initialize the TextToSpeechGoogle class for the TTS functionality check
-        tts_google = TextToSpeechGoogle()
+        # Start the TTS test in a separate thread
+        tts_thread = threading.Thread(target=self.tts_test)
+        tts_thread.start()
 
-        # Perform the TTS functionality check
-        try:
-            tts_google.speak("Please confirm if you can hear this message by typing 'y'.")
-            user_response = input("Did you hear the spoken message? (y/n): ").strip().lower()
-            if user_response[0] != "y":
-                console.print(
-                    "[bold red]ERROR:[/bold red] Text-to-speech functionality check failed. User did not confirm hearing the message."
-                )
-                return  # Exit the method if the user did not confirm hearing the TTS message
-            console.print("[bold green]SUCCESS:[/bold green] Text-to-speech functionality check passed.")
-        except Exception as e:
-            console.print(f"[bold red]ERROR:[/bold red] Text-to-speech functionality check failed: {e}")
-            return  # Exit the method if the TTS check fails due to an exception
-
+        # Optionally, wait for the TTS test to complete before proceeding
+        tts_thread.join()
 
 if __name__ == "__main__":
     equipment = Equipment(test_mode=True)
