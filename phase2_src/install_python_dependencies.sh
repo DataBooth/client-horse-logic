@@ -9,3 +9,16 @@ pip install --upgrade pip && pip install duckdb==0.10.0 gtts==2.5.1 openpyxl==3.
 #   sh install_python_dependencies.sh
 #
 # You may need `sudo` privileges to run either or both these commands
+
+
+# pipreqs --force phase2_src
+#
+# duckdb==0.10.0
+# gtts==2.5.1
+# importlib_metadata==7.0.1
+# openpyxl==3.1.2
+# pandas==2.2.0
+# pygame==2.5.2
+# pynput==1.7.6
+# rich==13.7.0
+# toml==0.10.2
