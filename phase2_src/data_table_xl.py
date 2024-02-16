@@ -3,114 +3,78 @@ import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 from pathlib import Path
 
+class DataManagerXL:
+    def __init__(self, workbook):
+        self.workbook = Path(workbook)
 
-# A class that represents an Excel data manager
-class DataTableXL:
-    # A constructor that initializes the attributes
-    def __init__(self, workbook, sheet, rows=None, columns=None, range=None, types=None):
-        self.workbook = workbook
-        self.sheet = sheet
-        self.rows = rows
-        self.columns = columns
-        self.range = range
-        self.types = types
+    def get_worksheet_names(self):
+        """
+        Returns a list of the names of all worksheets in the workbook.
+        """
+        try:
+            wb = openpyxl.load_workbook(self.workbook)
+            return wb.sheetnames
+        except FileNotFoundError:
+            raise Exception(f"The workbook {self.workbook} does not exist or is not accessible.")
 
-    # A method that reads data from the specified excel workbook and sheet name into a dataframe
-    def read_excel_data(self):
+    def read_table_data(self, sheet_name, use_first_col_as_index=False, rows=None, columns=None, range=None, types=None):
         # Check if the workbook exists and is accessible
         try:
             wb = openpyxl.load_workbook(self.workbook)
         except FileNotFoundError:
             raise Exception(f"The workbook {self.workbook} does not exist or is not accessible.")
 
-        # Check if the sheet name exists and is not empty
-        if self.sheet not in wb.sheetnames:
-            raise Exception(
-                f"The sheet name {self.sheet} does not exist in the workbook {self.workbook}."
+        # Ensure a sheet name is provided
+        if sheet_name is None:
+            raise Exception("A sheet name must be defined to read Excel data.")
+
+        # Check if the sheet name exists in the workbook
+        if sheet_name not in wb.sheetnames:
+            raise Exception(f"The sheet name {sheet_name} does not exist in the workbook {self.workbook}.")
+
+        # Preliminary read of the data to facilitate debugging
+        try:
+            df_debug = pd.read_excel(self.workbook, sheet_name=sheet_name, header=0)
+        except Exception as e:
+            raise Exception(f"Failed to read sheet {sheet_name} for debugging purposes: {str(e)}")
+
+        # Example check: Sheet is empty
+        if df_debug.empty:
+            raise Exception(f"The sheet {sheet_name} in the workbook {self.workbook} is empty. Data preview: \n{df_debug.head(2)}")
+
+        # Adjust the read_excel call based on use_first_col_as_index and other parameters
+        usecols = range(0, columns + 1) if use_first_col_as_index else range(1, columns + 1) if columns is not None else None
+        try:
+            df = pd.read_excel(
+                self.workbook,
+                sheet_name=sheet_name,
+                header=0,
+                index_col=0 if use_first_col_as_index else None,
+                nrows=rows,
+                usecols=usecols
             )
-        ws = wb[self.sheet]
-        if ws.max_row == 1 and ws.max_column == 1 and ws["A1"].value is None:
-            raise Exception(f"The sheet {self.sheet} in the workbook {self.workbook} is empty.")
-
-        # Check if the table starts from cell A1 and has column headings in row 1 and row numbers in column 1
-        if (
-            ws["A1"].value is not None
-            or any(ws.cell(row=1, column=c).value is None for c in range(2, ws.max_column + 1))
-            or any(ws.cell(row=r, column=1).value is None for r in range(2, ws.max_row + 1))
-        ):
-            raise Exception(
-                f"The table in the sheet {self.sheet} does not start from cell A1 or does not have column headings in row 1 or row numbers in column 1."
-            )
-
-        # Check if the named range exists and is valid
-        if self.range is not None:
-            if self.range not in wb.defined_names:
-                raise Exception(
-                    f"The named range {self.range} does not exist in the workbook {self.workbook}."
-                )
-            else:
-                # Get the coordinates of the named range
-                dests = wb.defined_names[self.range].destinations
-                # Check if the named range is in the same sheet and is a single range
-                if len(dests) != 1 or dests[0][0] != self.sheet:
-                    raise Exception(
-                        f"The named range {self.range} is not in the same sheet or is not a single range."
-                    )
-                else:
-                    # Get the top left and bottom right cells of the named range
-                    min_row, min_col, max_row, max_col = openpyxl.utils.range_boundaries(dests[0][1])
-                    # Check if the named range includes the column headings and row numbers
-                    if min_row != 1 or min_col != 1:
-                        raise Exception(
-                            f"The named range {self.range} does not include the column headings and row numbers."
-                        )
-                    # Override the rows and columns attributes with the size of the named range
-                    self.rows = max_row - min_row + 1
-                    self.columns = max_col - min_col + 1
-
-        # Check if the number of rows and columns are valid
-        if self.rows is None:
-            self.rows = ws.max_row - 1  # Exclude the header row
-        elif not isinstance(self.rows, int) or self.rows < 1 or self.rows > ws.max_row - 1:
-            raise Exception(
-                f"The number of rows {self.rows} is not valid. It must be an integer between 1 and {ws.max_row - 1}."
-            )
-
-        if self.columns is None:
-            self.columns = ws.max_column - 1  # Exclude the index column
-        elif not isinstance(self.columns, int) or self.columns < 1 or self.columns > ws.max_column - 1:
-            raise Exception(
-                f"The number of columns {self.columns} is not valid. It must be an integer between 1 and {ws.max_column - 1}."
-            )
-
-        # Read the data from the excel sheet into a dataframe
-        df = pd.read_excel(
-            self.workbook,
-            sheet_name=self.sheet,
-            header=0,
-            index_col=0,
-            nrows=self.rows,
-            usecols=range(1, self.columns + 1),
-        )
+        except Exception as e:
+            raise Exception(f"Failed to read sheet {sheet_name} with specified parameters: {str(e)}\nData preview: \n{df_debug.head(2)}")
 
         # Check if the list of column types is valid and matches the data types of the columns
-        if self.types is not None:
-            if not isinstance(self.types, list) or len(self.types) != self.columns:
+        if types is not None:
+            if not isinstance(types, list) or len(types) != len(df.columns):
                 raise Exception(
-                    f"The list of column types {self.types} is not valid. It must be a list of length {self.columns}."
+                    f"The list of column types {types} is not valid. It must be a list of length {len(df.columns)}. Data preview: \n{df.head(2)}"
                 )
             else:
                 # Convert the data types of the columns according to the list
-                for i, t in enumerate(self.types):
+                for i, t in enumerate(types):
                     try:
                         df.iloc[:, i] = df.iloc[:, i].astype(t)
                     except ValueError:
                         raise Exception(
-                            f"The column type {t} does not match the data type of the column {df.columns[i]}."
+                            f"The column type {t} does not match the data type of the column {df.columns[i]}. Data preview: \n{df.head(2)}"
                         )
 
         # Return the dataframe
         return df
+
 
     # A method that exports every table from each worksheet in a workbook into CSV format
     def export_excel_data(self):
@@ -138,7 +102,7 @@ class DataTableXL:
                     # Read the data from the sheet into a dataframe
                     df = pd.read_excel(self.workbook, sheet_name=sheet, header=0, index_col=0)
                     # Generate the file name for the CSV file
-                    file_name = self.workbook.split(".")[0] + "_" + sheet + ".csv"
+                    file_name = f"{self.workbook.stem}_{sheet}.csv"
                     # Write the dataframe to the CSV file
                     df.to_csv(file_name, sep=",", index=False)
                     # Print a message to indicate the export is done
@@ -194,3 +158,30 @@ class DataTableXL:
         )  # Save the workbook in the same directory as the CSV files
         wb.save(workbook_path)
         print(f"Created a workbook {workbook_path} based on the tables in CSV files {files}.")
+
+# Lookup helper functions
+
+def lookup_by_index(df, index, column_name):
+    try:
+        value = df.loc[index, column_name]
+        return value
+    except KeyError:
+        return "Index or column name not found."
+
+def lookup_by_row_value(df, search_column, search_value, target_column):
+    filtered_df = df[df[search_column] == search_value]
+    if not filtered_df.empty:
+        try:
+            value = filtered_df[target_column].iloc[0]
+            return value
+        except KeyError:
+            return "Target column name not found."
+    else:
+        return "No matching row found."
+
+
+if __name__ == "__main__":
+    data_manager = DataManagerXL(workbook='path/to/workbook.xlsx')
+
+    # Reading data from a specific sheet with custom configurations
+    table_data = data_manager.read_table_data(sheet_name='Sheet1', use_first_col_as_index=True, rows=100, columns=5)
