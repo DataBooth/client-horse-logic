@@ -3,7 +3,11 @@ import os
 import socket
 from time import sleep
 
-import pygame
+import contextlib
+
+with contextlib.redirect_stdout(None):
+    import pygame  # supress pygame version info / welcome message
+
 from gtts import gTTS
 
 
@@ -16,6 +20,10 @@ def play_sound_with_pygame(file_path):
 
 
 class TextToSpeechGoogle:
+    """
+    Note that this requires an internet connection to use the Google TTS package.
+    Although it does cache sound files (to the gtts_cache subdirectory) and can re-use them if in offline mode.
+    """
     def __init__(self, lang="en", cache_dir="gtts_cache"):
         self.lang = lang
         self.cache_dir = cache_dir
@@ -65,15 +73,29 @@ if __name__ == "__main__":
     # Example use #1
 
     tts_google = TextToSpeechGoogle()
-    tts_google.speak("Hello, this is a test.")
+    if tts_google.is_connected():
+        tts_google.speak("Hello, this is a test.")
 
-    # Example use #2
+        # Example use #2
 
-    for day in range(1, 7):  # Loop over days 1 to 6
-        for trial in range(1, 11):  # Loop over trials 1 to 10
-            # Example conditionals for demonstration
-            reward_given = trial % 2 == 0  # Reward given on even trials
-            reward_amount = 70 if day % 2 == 0 else 30  # 70 on even days, 30 on odd
-            trainer = 1 if day < 4 else 2  # Trainer 1 for days 1-3, Trainer 2 for days 4-6
-            tts_google.speak_trial_info(day, trial, reward_given, reward_amount, trainer)
-            sleep(1.0)
+        tts_google.speak(
+            "This is another test - looping through trials, trainers and rewards. It is not the final format."
+        )
+
+        for day in range(1, 3):  # Loop over days 1 to 6
+            for trial in range(1, 11):  # Loop over trials 1 to 10
+                # Example conditionals for demonstration
+                reward_given = trial % 2 == 0  # Reward given on even trials
+                reward_amount = 70 if day % 2 == 0 else 30  # 70 on even days, 30 on odd
+                trainer = 1 if day < 4 else 2  # Trainer 1 for days 1-3, Trainer 2 for days 4-6
+                tts_google.speak_trial_info(day, trial, reward_given, reward_amount, trainer)
+                sleep(0.5)
+    else:
+        print("\nInternet connection not available. Exiting.")
+
+
+# Usage:
+#
+# Run text-to-speech tests by running:
+#
+# python text_to_speech.py
