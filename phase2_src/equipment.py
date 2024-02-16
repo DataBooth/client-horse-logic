@@ -23,6 +23,8 @@ class Equipment:
         self.is_rpi = self.check_if_rpi()
         self.test_mode = test_mode or not self.is_rpi
         self.button_press_callbacks = {"green": None, "blue": None, "red": None}
+        self.keyboard_listener = None  # Initialize the listener reference
+
 
         if self.is_rpi:
             try:
@@ -105,8 +107,8 @@ class Equipment:
                 if self.button_press_callbacks["red"]:
                     self.button_press_callbacks["red"]()
 
-        listener = Listener(on_press=on_press, suppress=True)
-        listener.start()
+        self.keyboard_listener = Listener(on_press=on_press, suppress=True)
+        self.keyboard_listener.start()
 
     def stop_keyboard_listener(self):
         """Stops the keyboard listener if it's running."""
