@@ -13,6 +13,9 @@ __pycache__
 *.ddb
 *.duckdb.wal
 *.duckdb
+pipdeptree.txt
+python_info.txt
+system_info.txt
 
 
 # Byte-compiled / optimized / DLL files

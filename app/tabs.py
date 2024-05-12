@@ -165,26 +165,27 @@ class TabSchema:
         self.display()
 
     def display(self):
-        if self.db_conn.datasource_info["type"] == "database":
-            st.subheader("Database Schema")
-            schema_query = f"PRAGMA table_info('{self.data_choice}');"
-        else:
-            st.subheader(f"Table schema: `{self.data_choice}`")
-            schema_query = f"PRAGMA table_info('{self.data_choice}');"
-        try:
-            schema_result = self.db_conn.query_df(schema_query)
-            # st.write(schema_result)
-            # schema_df = pd.DataFrame(
-            #     schema_result,
-            #     columns=[
-            #         "Column ID",
-            #         "Name",
-            #         "Type",
-            #         "Not Null",
-            #         "Default Value",
-            #         "Primary Key",
-            #     ],
-            # )
-            st.dataframe(schema_result)
-        except Exception as e:
-            st.error(f"An error occurred while fetching the schema: {str(e)}")
+        st.image("app/images/Experiments_Schema_DuckDB.png")
+        # if self.db_conn.datasource_info["type"] == "database":
+        #     st.subheader("Database Schema")
+        #     schema_query = f"PRAGMA table_info('{self.data_choice}');"
+        # else:
+        #     st.subheader(f"Table schema: `{self.data_choice}`")
+        #     schema_query = f"PRAGMA table_info('{self.data_choice}');"
+        # try:
+        #     schema_result = self.db_conn.query_df(schema_query)
+        #     # st.write(schema_result)
+        #     # schema_df = pd.DataFrame(
+        #     #     schema_result,
+        #     #     columns=[
+        #     #         "Column ID",
+        #     #         "Name",
+        #     #         "Type",
+        #     #         "Not Null",
+        #     #         "Default Value",
+        #     #         "Primary Key",
+        #     #     ],
+        #     # )
+        #     st.dataframe(schema_result)
+        # except Exception as e:
+        #     st.error(f"An error occurred while fetching the schema: {str(e)}")

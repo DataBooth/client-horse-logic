@@ -6,7 +6,8 @@ To get better parsing results, you are suggested to tune the hyper-parameters
 `st` and `depth`.
 """
 
-from logparser3.Drain import LogParser
+
+from logparser.Drain import LogParser
 
 input_dir = '../data/test_log/' # The input directory of log file
 output_dir = 'result/'  # The output directory of parsing results
