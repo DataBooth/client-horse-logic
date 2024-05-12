@@ -9,6 +9,10 @@ Experiment*.csv
 Experiment*.log
 __pycache__
 .streamlit/secrets.toml
+*.ddb.wal
+*.ddb
+*.duckdb.wal
+*.duckdb
 
 
 # Byte-compiled / optimized / DLL files

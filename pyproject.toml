@@ -30,6 +30,7 @@ dependencies = [
     "gtts>=2.5.1",
     "pynput>=1.7.6",
     "playsound==1.2.2",
+    "rich>=13.7.0",
 ]
 requires-python = ">=3.10"
 license = {text = "HorseLogic"}
