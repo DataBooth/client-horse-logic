@@ -8,6 +8,9 @@ default:
 reqs:
     pdm export --o requirements.txt --without-hashes --prod
 
+quarto notebook="notebooks/logfile-data-extraction.ipynb":
+    quarto render {{notebook}} --execute
+
 update-st-config:
     streamlit config show > .streamlit/config.toml
 

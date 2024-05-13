@@ -5,7 +5,7 @@
 groups = ["default", "dev", "hardware"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:7642d5f39895537bf93a58b986bcee686e7e9ac741c3682d526e193a4cc5dc7c"
+content_hash = "sha256:29fe8b2f8d2303b697c20cf90c3700b752640d6d5d4e4bf6d55e7ec0f172b8d4"
 
 [[package]]
 name = "altair"
@@ -433,7 +433,7 @@ version = "0.4.6"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 summary = "Cross-platform colored terminal text."
 groups = ["default", "dev"]
-marker = "platform_system == \"Windows\" or sys_platform == \"win32\""
+marker = "sys_platform == \"win32\" or platform_system == \"Windows\""
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
@@ -676,6 +676,22 @@ files = [
     {file = "duckdb-0.10.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:0bf58385c43b8e448a2fea7e8729054934bf73ea616d1d7ef8184eda07f975e2"},
     {file = "duckdb-0.10.2-cp312-cp312-win_amd64.whl", hash = "sha256:eae75c7014597ded6e7f6dc51e32d48362a31608acd73e9f795748ee94335a54"},
     {file = "duckdb-0.10.2.tar.gz", hash = "sha256:0f609c9d5f941f1ecde810f010dd9321cd406a552c1df20318a13fa64247f67f"},
+]
+
+[[package]]
+name = "duckdb-engine"
+version = "0.12.0"
+requires_python = "<4,>=3.8"
+summary = "SQLAlchemy driver for duckdb"
+groups = ["default"]
+dependencies = [
+    "duckdb>=0.5.0",
+    "packaging>=21",
+    "sqlalchemy>=1.3.22",
+]
+files = [
+    {file = "duckdb_engine-0.12.0-py3-none-any.whl", hash = "sha256:8dadb6065ebfaf83378644d0289ffc9b55ae3ee6ace3b0b732abcfb8f5b03cd7"},
+    {file = "duckdb_engine-0.12.0.tar.gz", hash = "sha256:7e2fec35bbc1b794d64942f2102746482dae25dccfb459a10c70b08ccea55583"},
 ]
 
 [[package]]
@@ -1516,6 +1532,21 @@ dependencies = [
 files = [
     {file = "logpai-1.0.0-py3-none-any.whl", hash = "sha256:c5c7d77bc13823b1772ccbc0c7cd7c3babd5eedb1ce2a7845731a210f4cb7334"},
     {file = "logpai-1.0.0.tar.gz", hash = "sha256:0773aaae379fcc018880ca7319ffe76416147809b6bea606c5beca20852ca5f5"},
+]
+
+[[package]]
+name = "loguru"
+version = "0.7.2"
+requires_python = ">=3.5"
+summary = "Python logging made (stupidly) simple"
+groups = ["default"]
+dependencies = [
+    "colorama>=0.3.4; sys_platform == \"win32\"",
+    "win32-setctime>=1.0.0; sys_platform == \"win32\"",
+]
+files = [
+    {file = "loguru-0.7.2-py3-none-any.whl", hash = "sha256:003d71e3d3ed35f0f8984898359d65b79e5b21943f78af86aa5491210429b8eb"},
+    {file = "loguru-0.7.2.tar.gz", hash = "sha256:e671a53522515f34fd406340ee968cb9ecafbc4b36c679da03c18fd8d0bd51ac"},
 ]
 
 [[package]]
@@ -6114,6 +6145,18 @@ groups = ["default"]
 files = [
     {file = "widgetsnbextension-4.0.10-py3-none-any.whl", hash = "sha256:d37c3724ec32d8c48400a435ecfa7d3e259995201fbefa37163124a9fcb393cc"},
     {file = "widgetsnbextension-4.0.10.tar.gz", hash = "sha256:64196c5ff3b9a9183a8e699a4227fb0b7002f252c814098e66c4d1cd0644688f"},
+]
+
+[[package]]
+name = "win32-setctime"
+version = "1.1.0"
+requires_python = ">=3.5"
+summary = "A small Python utility to set file creation time on Windows"
+groups = ["default"]
+marker = "sys_platform == \"win32\""
+files = [
+    {file = "win32_setctime-1.1.0-py3-none-any.whl", hash = "sha256:231db239e959c2fe7eb1d7dc129f11172354f98361c4fa2d6d2d7e278baa8aad"},
+    {file = "win32_setctime-1.1.0.tar.gz", hash = "sha256:15cf5750465118d6929ae4de4eb46e8edae9a5634350c01ba582df868e932cb2"},
 ]
 
 [[package]]
