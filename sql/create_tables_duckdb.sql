@@ -1,5 +1,5 @@
 
-CREATE TABLE Experiments (
+CREATE OR REPLACE TABLE Experiments (
     ExperimentID INTEGER PRIMARY KEY,
     SubjectName VARCHAR,
     SessionNumber INTEGER,
@@ -9,7 +9,7 @@ CREATE TABLE Experiments (
     LogFileName VARCHAR
 );
 
-CREATE TABLE Parameters (
+CREATE OR REPLACE TABLE Parameters (
     ParameterID INTEGER PRIMARY KEY,
     ExperimentID INTEGER,
     ParameterName VARCHAR,
@@ -17,7 +17,7 @@ CREATE TABLE Parameters (
     FOREIGN KEY (ExperimentID) REFERENCES Experiments (ExperimentID)
 );
 
-CREATE TABLE Trials (
+CREATE OR REPLACE TABLE Trials (
     TrialID INTEGER PRIMARY KEY,
     ExperimentID INTEGER,
     TrialNumber INTEGER,
@@ -25,7 +25,7 @@ CREATE TABLE Trials (
     FOREIGN KEY (ExperimentID) REFERENCES Experiments (ExperimentID)
 );
 
-CREATE TABLE Events (
+CREATE OR REPLACE TABLE Events (
     EventID INTEGER PRIMARY KEY,
     TrialID INTEGER,
     EventType VARCHAR,
