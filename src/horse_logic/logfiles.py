@@ -1,73 +1,121 @@
 import glob
-from pathlib import Path
 import re
-import pandas as pd
-from datetime import datetime
+from dataclasses import dataclass, fields
+from pathlib import Path
+from typing import Optional
 
+import pandas as pd
+
+
+@dataclass
+class Experiment:
+    ExperimentID: int
+    SubjectName: str
+    SessionNumber: int
+    ExperimentType: str
+    Comment: Optional[str]
+    DateTime: datetime
+    LogFileName: str
+
+@dataclass
+class Parameter:
+    ParameterID: int
+    ExperimentID: int
+    ParameterName: str
+    ParameterValue: str
+
+@dataclass
+class Trial:
+    TrialID: int
+    ExperimentID: int
+    TrialNumber: int
+    StartToneDateTime: datetime
+
+@dataclass
+class Event:
+    EventID: int
+    TrialID: int
+    EventType: str
+    EventDateTime: datetime
 
 class Logfile:
     # Use the __init__ method to initialize the object attributes
-    def __init__(self, file_name, file_contents):
+    def __init__(self, file_name, file_contents=None):
         self.file_name = Path(file_name).name
-        self.file_contents = file_contents
-        self.num_lines = len(file_contents)
+        # If file_contents is None, read the contents from the file
+        if file_contents is None:
+            with open(file_name, 'r') as file:
+                self.file_contents = file.readlines()
+        else:
+            self.file_contents = file_contents
+        self.num_lines = len(self.file_contents)
 
 
     def parse_filename_components(self):
         # Adjusted regular expression pattern to match 'nan' or numbers with optional decimal part
-        pattern = r'(?P<suffix>[\w]+)_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<trial_number>nan|\d+(\.\d+)?)_(?P<experiment_type>[\w-]+)\.log'
+        pattern = r'(?P<suffix>[\w]+)_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<session_number>nan|\d+(\.\d+)?)_(?P<experiment_type>[\w-]+)\.log'
         match = re.match(pattern, self.file_name)
         if match:
             components = match.groupdict()
             # Handle 'nan' and convert numbers with '.0' to integers
-            trial_number = components['trial_number']
-            if trial_number.lower() != 'nan':
-                components['trial_number'] = int(float(trial_number))
+            session_number = components['session_number']
+            if session_number.lower() != 'nan':
+                components['session_number'] = int(float(session_number))
             else:
-                components['trial_number'] = None  # or np.nan if you prefer to use numpy's NaN representation
+                components['session_number'] = None  # or np.nan if you prefer to use numpy's NaN representation
             components['datetime'] = datetime.fromisoformat(components['datetime_str'])
+            components['filename'] = self.file_name
             return components
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
 
-# Function to parse parameters from the log file
-def parse_parameters(log_contents):
-    params_pattern = r"PARAMETERS:\n({.*?})\n"
-    params_match = re.search(params_pattern, log_contents, re.DOTALL)
-    if params_match:
-        params_block = params_match.group(1)
-        # Assuming the parameters block is in a Python dictionary format
-        params_dict = eval(params_block)
-        return params_dict
-    return {}
+    # Function to parse parameters from the log file
+    def parse_parameters(self):
+        params_pattern = r"PARAMETERS:\n({.*?})\n"
+        file_content_str = ''.join(self.file_contents)
+        params_match = re.search(params_pattern, file_content_str, re.DOTALL)
+        if params_match:
+            params_block = params_match.group(1)
+            # Assuming the parameters block is in a Python dictionary format
+            params_dict = eval(params_block)
+            return params_dict
+        return {}
 
-# Function to parse trials and events from the log file
-def parse_trials_and_events(log_contents):
-    trials = []
-    events = []
-    trial_pattern = r"Current trial: (\d+)"
-    event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
-    trials_split = re.split(trial_pattern, log_contents)
-    for i in range(1, len(trials_split), 2):
-        trial_number = int(trials_split[i])
-        trial_events = re.findall(event_pattern, trials_split[i+1])
-        trials.append({'TrialNumber': trial_number})
-        for event_datetime, event_desc in trial_events:
-            events.append({
-                'TrialNumber': trial_number,
-                'EventType': event_desc,
-                'EventDateTime': event_datetime
-            })
-    return trials, events
+    def parse_comments(self):
+        # Join the list of strings into a single string if necessary
+        file_content_str = ''.join(self.file_contents) if isinstance(self.file_contents, list) else self.file_contents
+        comment_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Comment: (.+)"
+        comments = re.findall(comment_pattern, file_content_str)
+        # Extract just the comment part
+        comments = [comment[1] for comment in comments]
+        return comments
 
-# Function to create tables from a SQL file
-def create_tables_from_sql(sql_file_path, db_connection):
-    with open(sql_file_path, 'r') as sql_file:
-        sql_commands = sql_file.read()
-        db_connection.execute(sql_commands)
-    print("Tables created successfully.")
+    # Function to parse trials and events from the log file
+    def parse_trials_and_events(self):
+        trials = []
+        events = []
+        trial_pattern = r"Current trial: (\d+)"
+        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
+        file_content_str = ''.join(self.file_contents)
+        trials_split = re.split(trial_pattern, file_content_str)
+        for i in range(1, len(trials_split), 2):
+            trial_number = int(trials_split[i])
+            trial_events = re.findall(event_pattern, trials_split[i+1])
+            trials.append({'TrialNumber': trial_number})
+            for event_datetime, event_desc in trial_events:
+                events.append({
+                    'TrialNumber': trial_number,
+                    'EventType': event_desc,
+                    'EventDateTime': event_datetime
+                })
+        return trials, events
 
-
+    # Function to create tables from a SQL file
+    def create_tables_from_sql(sql_file_path, db_connection):
+        with open(sql_file_path, 'r') as sql_file:
+            sql_commands = sql_file.read()
+            db_connection.execute(sql_commands)
+        print("Tables created successfully.")
 
 
     # Use the __str__ method to control how the object is represented as a string
@@ -171,7 +219,7 @@ class Logs:
             'suffix': [],
             'datetime': [],
             'subject_name': [],
-            'trial_number': [],
+            'session_number': [],
             'experiment_type': []
         }
 
@@ -186,8 +234,9 @@ class Logs:
                     data['suffix'].append(components['suffix'])
                     data['datetime'].append(components['datetime'])
                     data['subject_name'].append(components['subject_name'])
-                    data['trial_number'].append(components['trial_number'])
+                    data['session_number'].append(components['session_number'])
                     data['experiment_type'].append(components['experiment_type'])
+                    #data['filename']
                 else:
                     print(f"Can't match {file_name}")
             except ValueError as e:
