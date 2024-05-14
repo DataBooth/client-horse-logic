@@ -1,10 +1,12 @@
 import glob
 import re
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+from loguru import logger
 
 
 @dataclass
@@ -115,7 +117,7 @@ class Logfile:
         with open(sql_file_path, 'r') as sql_file:
             sql_commands = sql_file.read()
             db_connection.execute(sql_commands)
-        print("Tables created successfully.")
+        logger.info("Tables created successfully.")
 
 
     # Use the __str__ method to control how the object is represented as a string
@@ -185,31 +187,31 @@ class Logs:
         for file_name in matched_files:
             if include:
                 if file_name in self.included_files:
-                    print(f"Info: File {file_name} is already included.")
+                    logger.info(f"File {file_name} is already included.")
                 else:
                     self.included_files.append(file_name)
-                    print(f"Info: File {file_name} has been included.")
+                    logger.info(f"File {file_name} has been included.")
                     included_count += 1
             else:
                 if file_name in self.excluded_files:
-                    print(f"Info: File {file_name} is already excluded.")
+                    logger.info(f"File {file_name} is already excluded.")
                 else:
                     self.excluded_files.append(file_name)
-                    print(f"Info: File {file_name} has been excluded.")
+                    logger.info(f"File {file_name} has been excluded.")
                     excluded_count += 1
 
         # Report unmatched files
         for file_name in unmatched_files:
-            print(f"Warning: File {file_name} not found in the path.")
+            logger.warning(f"File {file_name} not found in the path.")
 
         # Update the logfiles list based on the new included_files
         self.logfiles = [Logfile(f"{self.path}/{file_name}", open(f"{self.path}/{file_name}", "r").readlines())
                          for file_name in self.included_files if Path(f"{self.path}/{file_name}").exists()]
 
         if include:
-            print(f"# Files specificly included: {included_count}")
+            logger.info(f"# Files specificly included: {included_count}")
         else:
-            print(f"# Files specificly excluded: {excluded_count}")
+            logger.info(f"# Files specificly excluded: {excluded_count}")
 
 
     def create_filename_components_dataframe(self, file_list):
@@ -238,9 +240,9 @@ class Logs:
                     data['experiment_type'].append(components['experiment_type'])
                     #data['filename']
                 else:
-                    print(f"Can't match {file_name}")
+                    logger.info(f"Can't match {file_name}")
             except ValueError as e:
-                print(f"Error processing file {file_name}: {e}")
+                logger.info(f"Error processing file {file_name}: {e}")
 
         # Create a DataFrame from the collected data
         df = pd.DataFrame(data)
