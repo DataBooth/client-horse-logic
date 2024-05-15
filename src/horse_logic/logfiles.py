@@ -184,7 +184,7 @@ class Logs:
         excluded_count = 0
 
         # Process matched files
-        for file_name in matched_files:
+        for file_name in sorted(matched_files):
             if include:
                 if file_name in self.included_files:
                     logger.info(f"File {file_name} is already included.")
