@@ -19,12 +19,14 @@ class Experiment:
     DateTime: datetime
     LogFileName: str
 
+
 @dataclass
 class Parameter:
     ParameterID: int
     ExperimentID: int
     ParameterName: str
     ParameterValue: str
+
 
 @dataclass
 class Trial:
@@ -33,6 +35,7 @@ class Trial:
     TrialNumber: int
     StartToneDateTime: datetime
 
+
 @dataclass
 class Event:
     EventID: int
@@ -40,41 +43,51 @@ class Event:
     EventType: str
     EventDateTime: datetime
 
+
 class Logfile:
     # Use the __init__ method to initialize the object attributes
     def __init__(self, file_name, file_contents=None):
         self.file_name = Path(file_name).name
         # If file_contents is None, read the contents from the file
         if file_contents is None:
-            with open(file_name, 'r') as file:
+            with open(file_name, "r") as file:
                 self.file_contents = file.readlines()
         else:
             self.file_contents = file_contents
         self.num_lines = len(self.file_contents)
 
-
     def parse_filename_components(self):
         # Adjusted regular expression pattern to match 'nan' or numbers with optional decimal part
-        pattern = r'(?P<suffix>[\w]+)_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<session_number>nan|\d+(\.\d+)?)_(?P<experiment_type>[\w-]+)\.log'
+        pattern = r"(?P<suffix>[\w]+)_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<session_number>nan|\d+(\.\d+)?)_(?P<experiment_type>[\w-]+)\.log"
         match = re.match(pattern, self.file_name)
         if match:
             components = match.groupdict()
             # Handle 'nan' and convert numbers with '.0' to integers
-            session_number = components['session_number']
-            if session_number.lower() != 'nan':
-                components['session_number'] = int(float(session_number))
+            session_number = components["session_number"]
+            if session_number.lower() != "nan":
+                components["session_number"] = int(float(session_number))
             else:
-                components['session_number'] = None  # or np.nan if you prefer to use numpy's NaN representation
-            components['datetime'] = datetime.fromisoformat(components['datetime_str'])
-            components['filename'] = self.file_name
-            return components
+                components["session_number"] = (
+                    None  # or np.nan if you prefer to use numpy's NaN representation
+                )
+            components["datetime"] = datetime.fromisoformat(components["datetime_str"])
+            components["filename"] = self.file_name
+            return Experiment(
+                ExperimentID=None,  # ID is auto-generated or not needed for insertion
+                SubjectName=components["subject_name"],
+                SessionNumber=components["session_number"],
+                ExperimentType=components["experiment_type"],
+                Comment=self.parse_comments(),
+                DateTime=components["datetime"],
+                LogFileName=components["filename"],
+            )
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
 
     # Function to parse parameters from the log file
     def parse_parameters(self):
         params_pattern = r"PARAMETERS:\n({.*?})\n"
-        file_content_str = ''.join(self.file_contents)
+        file_content_str = "".join(self.file_contents)
         params_match = re.search(params_pattern, file_content_str, re.DOTALL)
         if params_match:
             params_block = params_match.group(1)
@@ -85,7 +98,9 @@ class Logfile:
 
     def parse_comments(self):
         # Join the list of strings into a single string if necessary
-        file_content_str = ''.join(self.file_contents) if isinstance(self.file_contents, list) else self.file_contents
+        file_content_str = (
+            "".join(self.file_contents) if isinstance(self.file_contents, list) else self.file_contents
+        )
         comment_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Comment: (.+)"
         comments = re.findall(comment_pattern, file_content_str)
         # Extract just the comment part
@@ -98,27 +113,28 @@ class Logfile:
         events = []
         trial_pattern = r"Current trial: (\d+)"
         event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
-        file_content_str = ''.join(self.file_contents)
+        file_content_str = "".join(self.file_contents)
         trials_split = re.split(trial_pattern, file_content_str)
         for i in range(1, len(trials_split), 2):
             trial_number = int(trials_split[i])
-            trial_events = re.findall(event_pattern, trials_split[i+1])
-            trials.append({'TrialNumber': trial_number})
+            trial_events = re.findall(event_pattern, trials_split[i + 1])
+            trials.append({"TrialNumber": trial_number})
             for event_datetime, event_desc in trial_events:
-                events.append({
-                    'TrialNumber': trial_number,
-                    'EventType': event_desc,
-                    'EventDateTime': event_datetime
-                })
+                events.append(
+                    {
+                        "TrialNumber": trial_number,
+                        "EventType": event_desc,
+                        "EventDateTime": event_datetime,
+                    }
+                )
         return trials, events
 
     # Function to create tables from a SQL file
     def create_tables_from_sql(sql_file_path, db_connection):
-        with open(sql_file_path, 'r') as sql_file:
+        with open(sql_file_path, "r") as sql_file:
             sql_commands = sql_file.read()
             db_connection.execute(sql_commands)
         logger.info("Tables created successfully.")
-
 
     # Use the __str__ method to control how the object is represented as a string
     def __str__(self):
@@ -141,7 +157,6 @@ class Logs:
         self.excluded_files = []
         self.logfile_ext = logfile_ext
         self.load_logfiles()  # A method to load the log files from the directory
-
 
     # Define a method to load the log files from the directory
     def load_logfiles(self):
@@ -205,24 +220,26 @@ class Logs:
             logger.warning(f"File {file_name} not found in the path.")
 
         # Update the logfiles list based on the new included_files
-        self.logfiles = [Logfile(f"{self.path}/{file_name}", open(f"{self.path}/{file_name}", "r").readlines())
-                         for file_name in self.included_files if Path(f"{self.path}/{file_name}").exists()]
+        self.logfiles = [
+            Logfile(f"{self.path}/{file_name}", open(f"{self.path}/{file_name}", "r").readlines())
+            for file_name in self.included_files
+            if Path(f"{self.path}/{file_name}").exists()
+        ]
 
         if include:
             logger.info(f"# Files specificly included: {included_count}")
         else:
             logger.info(f"# Files specificly excluded: {excluded_count}")
 
-
     def create_filename_components_dataframe(self, file_list):
         # Initialize lists to hold the data
         data = {
-            'original_filename': [],
-            'suffix': [],
-            'datetime': [],
-            'subject_name': [],
-            'session_number': [],
-            'experiment_type': []
+            "original_filename": [],
+            "suffix": [],
+            "datetime": [],
+            "subject_name": [],
+            "session_number": [],
+            "experiment_type": [],
         }
 
         # Process included and excluded files
@@ -230,15 +247,15 @@ class Logs:
         for file_name in file_list:
             try:
                 # Parse the filename components
-                components = Logfile(file_name, "").parse_filename_components()
-                if components is not None:
-                    data['original_filename'].append(file_name)
-                    data['suffix'].append(components['suffix'])
-                    data['datetime'].append(components['datetime'])
-                    data['subject_name'].append(components['subject_name'])
-                    data['session_number'].append(components['session_number'])
-                    data['experiment_type'].append(components['experiment_type'])
-                    #data['filename']
+                experiment = Logfile(file_name, "").parse_filename_components()
+                if experiment is not None:
+                    data["original_filename"].append(experiment.LogFileName)
+                    data["suffix"].append("Experiment")
+                    data["datetime"].append(experiment.DateTime)
+                    data["subject_name"].append(experiment.SubjectName)
+                    data["session_number"].append(experiment.SessionNumber)
+                    data["experiment_type"].append(experiment.ExperimentType)
+                    # data['filename']
                 else:
                     logger.info(f"Can't match {file_name}")
             except ValueError as e:
