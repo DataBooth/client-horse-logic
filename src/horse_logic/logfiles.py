@@ -13,6 +13,7 @@ from loguru import logger
 class Experiment:
     ExperimentID: int
     SubjectName: str
+    SubjectNumber: int
     SessionNumber: int
     ExperimentType: str
     Comment: Optional[str]
@@ -33,15 +34,18 @@ class Trial:
     TrialID: int
     ExperimentID: int
     TrialNumber: int
-    StartToneDateTime: datetime
+    TrialStartTime: datetime
+    TrialEndTime: datetime
 
 
 @dataclass
 class Event:
     EventID: int
     TrialID: int
+    EventNumber: int
+    EventTime: datetime
     EventType: str
-    EventDateTime: datetime
+    EventElapsedTime: float
 
 
 class Logfile:
