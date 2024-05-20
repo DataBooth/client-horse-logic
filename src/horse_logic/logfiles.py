@@ -77,8 +77,9 @@ class Logfile:
             components["datetime"] = datetime.fromisoformat(components["datetime_str"])
             components["filename"] = self.file_name
             return Experiment(
-                ExperimentID=None,  # ID is auto-generated or not needed for insertion
+                ExperimentID=None,    # ID is auto-generated or not needed for insertion
                 SubjectName=components["subject_name"],
+                SubjectNumber=None,   # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],
                 ExperimentType=components["experiment_type"],
                 Comment=self.parse_comments(),
