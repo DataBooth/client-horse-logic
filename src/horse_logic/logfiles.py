@@ -109,8 +109,8 @@ class Logfile:
         comment_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Comment: (.+)"
         comments = re.findall(comment_pattern, file_content_str)
         # Extract just the comment part
-        comments = [comment[1] for comment in comments]
-        return comments
+        comment_text = " ".join(comment[1] for comment in comments)
+        return comment_text
 
     # Function to parse trials and events from the log file
     def parse_trials_and_events(self):
@@ -132,6 +132,9 @@ class Logfile:
                         "EventDateTime": event_datetime,
                     }
                 )
+        if trials == [] or events == []:
+            logger.error(f"{self.file_name} contains no data - exclude from analysis.")
+            return None, None
         return trials, events
 
     # Function to create tables from a SQL file
@@ -151,17 +154,20 @@ class Logfile:
 
 class Logs:
     # Use the __init__ method to initialize the object attributes
-    def __init__(self, path, patterns, include=True, logfile_ext=".log"):
+    def __init__(self, path, patterns=None, include=True, logfile_ext=".log"):
         self.path = path
-        if isinstance(patterns, str):
-            patterns = [patterns]
-        self.patterns = patterns
         self.include = include
         self.logfiles = []  # A list of Logfile objects
         self.included_files = []
         self.excluded_files = []
         self.logfile_ext = logfile_ext
-        self.load_logfiles()  # A method to load the log files from the directory
+        if patterns is not None:
+            if isinstance(patterns, str):
+                patterns = [patterns]
+            self.patterns = patterns
+            self.load_logfiles()  # A method to load the log files from the directory
+        else:
+            self.patterns = []
 
     # Define a method to load the log files from the directory
     def load_logfiles(self):
@@ -217,6 +223,8 @@ class Logs:
                     logger.info(f"File {file_name} is already excluded.")
                 else:
                     self.excluded_files.append(file_name)
+                    if file_name in self.included_files:
+                        self.included_files.remove(file_name)
                     logger.info(f"File {file_name} has been excluded.")
                     excluded_count += 1
 
@@ -232,9 +240,9 @@ class Logs:
         ]
 
         if include:
-            logger.info(f"# Files specificly included: {included_count}")
+            logger.info(f"# Files specifically included: {included_count}")
         else:
-            logger.info(f"# Files specificly excluded: {excluded_count}")
+            logger.info(f"# Files specifically excluded: {excluded_count}")
 
     def create_filename_components_dataframe(self, file_list):
         # Initialize lists to hold the data
@@ -269,6 +277,26 @@ class Logs:
         # Create a DataFrame from the collected data
         df = pd.DataFrame(data)
         return df
+
+    def load_specific_logfiles_from_csv(self, csv_file_path):
+        # Read the CSV file into a DataFrame, specifying that it has no header
+        df = pd.read_csv(csv_file_path, header=None)
+
+        # Get the second column (index 1) and convert it to a list
+        file_names = df[1].tolist()
+
+        # Filter out any non-log files
+        log_file_names = [file_name for file_name in file_names if file_name.endswith(self.logfile_ext)]
+
+        # Load these log files
+        for file_name in log_file_names:
+            file_path = Path(self.path) / file_name
+            if file_path.exists():
+                with open(file_path, "r") as file:
+                    self.logfiles.append(Logfile(file_name, file.readlines()))
+            else:
+                logger.warning(f"File {file_name} does not exist.")
+
 
     def __str__(self):
         return f"Logs: {len(self.logfiles)} log files in {self.path}"
