@@ -69,5 +69,6 @@ CREATE OR REPLACE TABLE Events (
     EventNumber INTEGER,
     EventTime TIMESTAMP,
     EventType VARCHAR,
+    EventElapsedTime DOUBLE,
     FOREIGN KEY (TrialID) REFERENCES Trials (TrialID)
 );
