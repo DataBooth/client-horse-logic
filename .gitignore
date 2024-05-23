@@ -17,6 +17,9 @@ pipdeptree.txt
 python_info.txt
 system_info.txt
 */gtts_cache/
+*.zip
+notebooks/*_files
+.secrets.toml
 
 
 # Byte-compiled / optimized / DLL files

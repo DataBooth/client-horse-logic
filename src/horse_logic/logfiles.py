@@ -89,6 +89,33 @@ class Logfile:
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
 
+    def parse_filename_components_cog_bias(self):
+        # Adjusted regular expression pattern to match the new filename format
+        pattern = r"Experiment_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<session_number>nan|\d+(\.\d+)?)_(?P<experiment_type>.+)\.log"
+        match = re.match(pattern, self.file_name)
+        if match:
+            components = match.groupdict()
+            # Handle 'nan' and convert numbers with '.0' to integers
+            session_number = components["session_number"]
+            if session_number.lower() != "nan":
+                components["session_number"] = int(float(session_number))
+            else:
+                components["session_number"] = None
+            components["datetime"] = datetime.fromisoformat(components["datetime_str"])
+            components["filename"] = self.file_name
+            return Experiment(
+                ExperimentID=None,    # ID is auto-generated or not needed for insertion
+                SubjectName=components["subject_name"],
+                SubjectNumber=None,   # This needs to be inserted from the external SubjectName, SubjectNumber table
+                SessionNumber=components["session_number"],
+                ExperimentType=components["experiment_type"],
+                Comment=self.parse_comments(),
+                DateTime=components["datetime"],
+                LogFileName=components["filename"],
+            )
+        else:
+            raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
+
     # Function to parse parameters from the log file
     def parse_parameters(self):
         params_pattern = r"PARAMETERS:\n({.*?})\n"
@@ -117,6 +144,31 @@ class Logfile:
         trials = []
         events = []
         trial_pattern = r"Current trial: (\d+)"
+        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
+        file_content_str = "".join(self.file_contents)
+        trials_split = re.split(trial_pattern, file_content_str)
+        for i in range(1, len(trials_split), 2):
+            trial_number = int(trials_split[i])
+            trial_events = re.findall(event_pattern, trials_split[i + 1])
+            trials.append({"TrialNumber": trial_number})
+            for event_datetime, event_desc in trial_events:
+                events.append(
+                    {
+                        "TrialNumber": trial_number,
+                        "EventType": event_desc,
+                        "EventDateTime": event_datetime,
+                    }
+                )
+        if trials == [] or events == []:
+            logger.error(f"{self.file_name} contains no data - exclude from analysis.")
+            return None, None
+        return trials, events
+
+
+    def parse_trials_and_events_cog_bias(self):
+        trials = []
+        events = []
+        trial_pattern = r"Current Trial Trial (\d+) - P - positive"
         event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
         file_content_str = "".join(self.file_contents)
         trials_split = re.split(trial_pattern, file_content_str)
@@ -261,6 +313,40 @@ class Logs:
             try:
                 # Parse the filename components
                 experiment = Logfile(file_name, "").parse_filename_components()
+                if experiment is not None:
+                    data["original_filename"].append(experiment.LogFileName)
+                    data["suffix"].append("Experiment")
+                    data["datetime"].append(experiment.DateTime)
+                    data["subject_name"].append(experiment.SubjectName)
+                    data["session_number"].append(experiment.SessionNumber)
+                    data["experiment_type"].append(experiment.ExperimentType)
+                    # data['filename']
+                else:
+                    logger.info(f"Can't match {file_name}")
+            except ValueError as e:
+                logger.info(f"Error processing file {file_name}: {e}")
+
+        # Create a DataFrame from the collected data
+        df = pd.DataFrame(data)
+        return df
+
+    def create_filename_components_dataframe_cog_bias(self, file_list):
+        # Initialize lists to hold the data
+        data = {
+            "original_filename": [],
+            "suffix": [],
+            "datetime": [],
+            "subject_name": [],
+            "session_number": [],
+            "experiment_type": [],
+        }
+
+        # Process included and excluded files
+        # for file_list in (self.included_files, self.excluded_files):
+        for file_name in file_list:
+            try:
+                # Parse the filename components
+                experiment = Logfile(file_name, "").parse_filename_components_cog_bias()
                 if experiment is not None:
                     data["original_filename"].append(experiment.LogFileName)
                     data["suffix"].append("Experiment")
