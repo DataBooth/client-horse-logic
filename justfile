@@ -12,7 +12,7 @@ quarto notebook="notebooks/logfile-data-extraction.ipynb":
     quarto render {{notebook}} --execute
 
 zip-quarto notebook="logfile-data-extraction":
-    zip -r analysis.zip notebooks/{{notebook}}.html notebooks/{{notebook}}_files/ data/results/notebooks/all_excluded_files.csv data/results/notebooks/included_files.csv data/results/notebooks/bonnie_excluded_files.csv  data/results/notebooks/experiment_summary_Oct2023_included.csv
+    zip -r analysis.zip notebooks/{{notebook}}.html notebooks/{{notebook}}_files/ data/results/notebooks/cb/*.csv
 
 
 update-st-config:
