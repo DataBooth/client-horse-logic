@@ -9,7 +9,8 @@
     ExperimentType: str
     Comment: Optional[str]
     DateTime: datetime
-    LogFileName: str */
+    LogFileName: str
+    Parameters: Dict */
 
 CREATE OR REPLACE TABLE Experiments (
     ExperimentID INTEGER PRIMARY KEY,
@@ -19,23 +20,24 @@ CREATE OR REPLACE TABLE Experiments (
     ExperimentType VARCHAR,
     Comment VARCHAR,
     DateTime TIMESTAMP,
-    LogFileName VARCHAR
+    LogFileName VARCHAR,
+    Parameters JSON
 );
 
 
-/* class Parameter:
+/* class Parameter:   - TODO: Remove Parameter / Parameters (migrated in JSON in Experiments)
     ParameterID: int
     ExperimentID: int
     ParameterName: str
     ParameterValue: str */
 
-CREATE OR REPLACE TABLE Parameters (
+/* CREATE OR REPLACE TABLE Parameters (
     ParameterID INTEGER PRIMARY KEY,
     ExperimentID INTEGER,
     ParameterName VARCHAR,
     ParameterValue VARCHAR,
     FOREIGN KEY (ExperimentID) REFERENCES Experiments (ExperimentID)
-);
+); */
 
 
 /* class Trial:

@@ -1,11 +1,13 @@
 import glob
+import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 
 import pandas as pd
+from IPython.display import Markdown, display
 from loguru import logger
 
 
@@ -19,14 +21,15 @@ class Experiment:
     Comment: Optional[str]
     DateTime: datetime
     LogFileName: str
+    Parameters: Dict
 
 
-@dataclass
-class Parameter:
-    ParameterID: int
-    ExperimentID: int
-    ParameterName: str
-    ParameterValue: str
+# @dataclass
+# class Parameter:
+#     ParameterID: int
+#     ExperimentID: int
+#     ParameterName: str
+#     ParameterValue: str
 
 
 @dataclass
@@ -77,14 +80,15 @@ class Logfile:
             components["datetime"] = datetime.fromisoformat(components["datetime_str"])
             components["filename"] = self.file_name
             return Experiment(
-                ExperimentID=None,    # ID is auto-generated or not needed for insertion
+                ExperimentID=None,  # ID is auto-generated or not needed for insertion
                 SubjectName=components["subject_name"],
-                SubjectNumber=None,   # This needs to be inserted from the external SubjectName, SubjectNumber table
+                SubjectNumber=None,  # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],
                 ExperimentType=components["experiment_type"],
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
                 LogFileName=components["filename"],
+                Parameters=None
             )
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
@@ -104,9 +108,9 @@ class Logfile:
             components["datetime"] = datetime.fromisoformat(components["datetime_str"])
             components["filename"] = self.file_name
             return Experiment(
-                ExperimentID=None,    # ID is auto-generated or not needed for insertion
+                ExperimentID=None,  # ID is auto-generated or not needed for insertion
                 SubjectName=components["subject_name"],
-                SubjectNumber=None,   # This needs to be inserted from the external SubjectName, SubjectNumber table
+                SubjectNumber=None,  # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],
                 ExperimentType=components["experiment_type"],
                 Comment=self.parse_comments(),
@@ -164,7 +168,6 @@ class Logfile:
             return None, None
         return trials, events
 
-
     def parse_trials_and_events_cog_bias(self):
         trials = []
         events = []
@@ -195,6 +198,19 @@ class Logfile:
             sql_commands = sql_file.read()
             db_connection.execute(sql_commands)
         logger.info("Tables created successfully.")
+
+    def insert_record_to_database(self, con, record):
+        table_name = record.__class__.__name__.lower() + 's'  # Assumes table name is plural of the class name
+        columns = ', '.join(field.name for field in fields(record))
+        placeholders = ', '.join('?' for _ in fields(record))
+        values = []
+        for field in fields(record):
+            value = getattr(record, field.name)
+            if isinstance(value, dict):  # Convert dict to JSON string
+                value = json.dumps(value)
+            values.append(value)
+        query = f'INSERT INTO {table_name} ({columns}) VALUES ({placeholders})'
+        con.execute(query, tuple(values))
 
     # Use the __str__ method to control how the object is represented as a string
     def __str__(self):
@@ -382,6 +398,23 @@ class Logs:
                     self.logfiles.append(Logfile(file_name, file.readlines()))
             else:
                 logger.warning(f"File {file_name} does not exist.")
+
+    def display_sessions_by_subject(self, df_out, subject_df):
+        session_summary = []
+        for n_subject, subject_name in enumerate(subject_df["subject_name"]):
+            df_ = df_out.drop(columns=["suffix", "subject_name"])[df_out["subject_name"] == subject_name]
+            n_session = len(df_)
+            session_summary.append((n_subject + 1, subject_name.capitalize(), n_session))
+            if n_session == 0:
+                logger.info(f"Subject {subject_name}: No experiments conducted")
+            else:
+                df_.loc[:, "time_dff"] = df_["datetime"].diff()
+                display(
+                    Markdown(f"### {n_subject+1}. {subject_name.capitalize()}: {n_session} session(s)")
+                )
+                display(df_)
+        return pd.DataFrame(session_summary, columns=["Subject number", "Subject name", "Session count"])
+
 
 
     def __str__(self):
