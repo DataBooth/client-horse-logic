@@ -5,7 +5,7 @@
 groups = ["default", "dev", "hardware"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:29fe8b2f8d2303b697c20cf90c3700b752640d6d5d4e4bf6d55e7ec0f172b8d4"
+content_hash = "sha256:53048d3fc4e2c6124f88e78684b7289d37764e357199c7c600e78f366dc1a893"
 
 [[package]]
 name = "altair"
@@ -5181,6 +5181,20 @@ files = [
 ]
 
 [[package]]
+name = "pypdf"
+version = "4.2.0"
+requires_python = ">=3.6"
+summary = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
+groups = ["default"]
+dependencies = [
+    "typing-extensions>=4.0; python_version < \"3.11\"",
+]
+files = [
+    {file = "pypdf-4.2.0-py3-none-any.whl", hash = "sha256:dc035581664e0ad717e3492acebc1a5fc23dba759e788e3d4a9fc9b1a32e72c1"},
+    {file = "pypdf-4.2.0.tar.gz", hash = "sha256:fe63f3f7d1dcda1c9374421a94c1bba6c6f8c4a62173a59b64ffd52058f846b1"},
+]
+
+[[package]]
 name = "pypiwin32"
 version = "223"
 summary = "UNKNOWN"
@@ -5192,6 +5206,21 @@ dependencies = [
 files = [
     {file = "pypiwin32-223-py3-none-any.whl", hash = "sha256:67adf399debc1d5d14dffc1ab5acacb800da569754fafdc576b2a039485aa775"},
     {file = "pypiwin32-223.tar.gz", hash = "sha256:71be40c1fbd28594214ecaecb58e7aa8b708eabfa0125c8a109ebd51edbd776a"},
+]
+
+[[package]]
+name = "pytesseract"
+version = "0.3.10"
+requires_python = ">=3.7"
+summary = "Python-tesseract is a python wrapper for Google's Tesseract-OCR"
+groups = ["default"]
+dependencies = [
+    "Pillow>=8.0.0",
+    "packaging>=21.3",
+]
+files = [
+    {file = "pytesseract-0.3.10-py3-none-any.whl", hash = "sha256:8f22cc98f765bf13517ead0c70effedb46c153540d25783e04014f28b55a5fc6"},
+    {file = "pytesseract-0.3.10.tar.gz", hash = "sha256:f1c3a8b0f07fd01a1085d451f5b8315be6eec1d5577a6796d46dc7a62bd4120f"},
 ]
 
 [[package]]
