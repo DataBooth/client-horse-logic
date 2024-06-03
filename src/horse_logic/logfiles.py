@@ -14,6 +14,7 @@ from loguru import logger
 @dataclass
 class Experiment:
     ExperimentID: int
+    Cohort: str
     SubjectName: str
     SubjectNumber: int
     SessionNumber: int
@@ -22,14 +23,6 @@ class Experiment:
     DateTime: datetime
     LogFileName: str
     Parameters: Dict
-
-
-# @dataclass
-# class Parameter:
-#     ParameterID: int
-#     ExperimentID: int
-#     ParameterName: str
-#     ParameterValue: str
 
 
 @dataclass
@@ -81,6 +74,7 @@ class Logfile:
             components["filename"] = self.file_name
             return Experiment(
                 ExperimentID=None,  # ID is auto-generated or not needed for insertion
+                Cohort=None,
                 SubjectName=components["subject_name"],
                 SubjectNumber=None,  # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],
@@ -109,6 +103,7 @@ class Logfile:
             components["filename"] = self.file_name
             return Experiment(
                 ExperimentID=None,  # ID is auto-generated or not needed for insertion
+                Cohort=None,        # This needs to be inserted from the external Cohort table
                 SubjectName=components["subject_name"],
                 SubjectNumber=None,  # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],

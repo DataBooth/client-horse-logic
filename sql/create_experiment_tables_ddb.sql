@@ -3,6 +3,7 @@
 
 /* class Experiment:
     ExperimentID: int
+    Cohort: str
     SubjectName: str
     SubjectNumber: int
     SessionNumber: int
@@ -14,6 +15,7 @@
 
 CREATE OR REPLACE TABLE Experiments (
     ExperimentID INTEGER PRIMARY KEY,
+    Cohort VARCHAR,
     SubjectName VARCHAR,
     SubjectNumber INTEGER,
     SessionNumber INTEGER,
@@ -23,21 +25,6 @@ CREATE OR REPLACE TABLE Experiments (
     LogFileName VARCHAR,
     Parameters JSON
 );
-
-
-/* class Parameter:   - TODO: Remove Parameter / Parameters (migrated in JSON in Experiments)
-    ParameterID: int
-    ExperimentID: int
-    ParameterName: str
-    ParameterValue: str */
-
-/* CREATE OR REPLACE TABLE Parameters (
-    ParameterID INTEGER PRIMARY KEY,
-    ExperimentID INTEGER,
-    ParameterName VARCHAR,
-    ParameterValue VARCHAR,
-    FOREIGN KEY (ExperimentID) REFERENCES Experiments (ExperimentID)
-); */
 
 
 /* class Trial:
