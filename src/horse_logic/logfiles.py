@@ -111,6 +111,7 @@ class Logfile:
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
                 LogFileName=components["filename"],
+                Parameters=None
             )
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
