@@ -10,6 +10,16 @@ import pandas as pd
 from IPython.display import Markdown, display
 from loguru import logger
 
+def parse_direction(comment):
+    comment_lower = comment.lower()
+    if "right" in comment_lower:
+        return "RIGHT"
+    elif "left" in comment_lower:
+        return "LEFT"
+    else:
+        return None
+
+# RPE Experiments
 
 @dataclass
 class Experiment:
@@ -36,6 +46,41 @@ class Trial:
 
 @dataclass
 class Event:
+    EventID: int
+    TrialID: int
+    EventNumber: int
+    EventTime: datetime
+    EventType: str
+    EventElapsedTime: float
+
+
+# CB Experiments
+
+@dataclass
+class ExperimentCB:
+    ExperimentID: int
+    Cohort: str
+    SubjectName: str
+    SubjectNumber: int
+    SessionNumber: int
+    ExperimentType: str
+    Comment: Optional[str]
+    DateTime: datetime
+    LogFileName: str
+    Parameters: Dict
+
+
+@dataclass
+class TrialCB:
+    TrialID: int
+    ExperimentID: int
+    TrialNumber: int
+    TrialStartTime: datetime
+    TrialEndTime: datetime
+
+
+@dataclass
+class EventCB:
     EventID: int
     TrialID: int
     EventNumber: int
@@ -164,29 +209,47 @@ class Logfile:
             return None, None
         return trials, events
 
+
     def parse_trials_and_events_cog_bias(self):
-        trials = []
-        events = []
-        trial_pattern = r"Current Trial Trial (\d+) - P - positive"
-        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
         file_content_str = "".join(self.file_contents)
-        trials_split = re.split(trial_pattern, file_content_str)
-        for i in range(1, len(trials_split), 2):
-            trial_number = int(trials_split[i])
-            trial_events = re.findall(event_pattern, trials_split[i + 1])
-            trials.append({"TrialNumber": trial_number})
-            for event_datetime, event_desc in trial_events:
+
+        direction = parse_direction(self.parse_comments())
+        trial_start_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
+        trial_start_match = re.search(trial_start_pattern, file_content_str)
+        if trial_start_match:
+            TrialStartDateTime = datetime.fromisoformat(trial_start_match.group(1))
+        else:
+            logger.error(f"{self.file_name} does not contain a trial start time.")
+            return None, None
+
+        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): ((GO|NOGO) for Trial (\d+) - (P|N|M|NP|NN) - (positive|negative|median|near positive|near negative)( - response time \d+\.\d+)?( - (positive|negative) criterion count (\d+))?|Green button pressed - horse released)"
+        events = []
+        event_matches = re.findall(event_pattern, file_content_str)
+        previous_event_datetime = None
+        for event in event_matches:
+            event_datetime_str, event_desc, response_type, trial_number, trial_sub_type, _, _, _, criterion_type, criterion_count = event
+            event_datetime = datetime.fromisoformat(event_datetime_str)
+            ResponseTime = (event_datetime - previous_event_datetime).total_seconds() if response_type == "GO" and previous_event_datetime else None
+            ElapsedTime = (event_datetime - TrialStartDateTime).total_seconds()
+            if trial_number:  # Check if trial_number is not an empty string
                 events.append(
                     {
-                        "TrialNumber": trial_number,
-                        "EventType": event_desc,
+                        "TrialNumber": int(trial_number),
+                        "ResponseType": response_type,
+                        "TrialSubType": trial_sub_type,
                         "EventDateTime": event_datetime,
+                        "Direction": direction,
+                        "CriterionType": criterion_type if criterion_count else None,
+                        "CriterionCount": int(criterion_count) if criterion_count else None,
+                        "ResponseTime": ResponseTime,
+                        "ElapsedTime": ElapsedTime,
                     }
                 )
-        if trials == [] or events == []:
+            previous_event_datetime = event_datetime
+        if events == []:
             logger.error(f"{self.file_name} contains no data - exclude from analysis.")
             return None, None
-        return trials, events
+        return events
 
     # Function to create tables from a SQL file
     def create_tables_from_sql(sql_file_path, db_connection):
