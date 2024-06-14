@@ -20,7 +20,8 @@ system_info.txt
 *.zip
 notebooks/*_files
 .secrets.toml
-
+*.html
+*.xlsx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
