@@ -28,7 +28,7 @@ class DuckDBManager:
 
     def load_motherduck_extension(self):
         if not self.is_md_extension_loaded:
-            self.execute_sql("LOAD motherduck;")
+            self.execute_sql("ATTACH 'md';")
             self.is_md_extension_loaded = True
 
     def load_secrets(self, secrets_file):
@@ -56,7 +56,7 @@ class DuckDBManager:
             self.logger.info(f"Connected to {self.db_path}")
 
             if self.db_path.startswith("md:"):
-                self.load_motherduck_extension()
+                self.is_md_extension_loaded = True  # Extension is auto-loaded if a connection is made to MotherDuck
 
         except Exception as e:
             self.logger.error(f"Failed to connect to database: {e}")
@@ -120,7 +120,7 @@ class DuckDBManager:
             self.load_motherduck_extension()
             version_info = self.execute_sql("PRAGMA md_version;")
             self.logger.info(f"MotherDuck DuckDB version: {version_info}")
-            return version_info
+            return version_info.fetchall()
         except Exception as e:
             self.logger.error(f"Failed to fetch MotherDuck DuckDB version: {e}")
             raise
