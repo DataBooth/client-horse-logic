@@ -14,3 +14,6 @@ This is performed using the Jupyter notebooks in the `notebooks` directory.
 ### Details
 
 The key notebooks for performing the analysis are:
+
+
+### Directory structure
