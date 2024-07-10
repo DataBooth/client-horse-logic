@@ -1,3 +1,5 @@
+uncommitted/
+.pdm-build/
 .DS_Store
 .vscode/
 .venv/
@@ -22,6 +24,7 @@ notebooks/*_files
 .secrets.toml
 *.html
 *.xlsx
+tmp.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,7 +1,5 @@
 # https://just.systems/
 
-# import './docker.just'
-
 default:
   @just --list
 
@@ -14,23 +12,11 @@ quarto notebook="notebooks/logfile-data-extraction.ipynb":
 zip-quarto notebook="logfile-data-extraction":
     zip -r analysis.zip notebooks/{{notebook}}.html notebooks/{{notebook}}_files/ data/results/notebooks/cb/*.csv
 
-
-update-st-config:
-    streamlit config show > .streamlit/config.toml
-
-app app_name="":
-    streamlit run {{app_name}} --server.address=localhost
-
-# View/edit DuckDB database with Harlequin CLI (optional db_name)
-duck db_name="":
-    harlequin --theme github-dark {{db_name}}
-
-pre-commit_update:
-    pre-commit autoupdate
-
-pre-commit_test:
-    pre-commit run --all-files
-
 zip-report report_html:
     #!/usr/bin/env bash
     zip -er report.zip {{report_html}}
+
+dir-report outfile="docs/complete_directory_structure.md":
+    echo '```' > {{outfile}}
+    tree --noreport --gitignore -I '__pycache__|*.csv|*.log' >> {{outfile}}
+    echo '```' >> {{outfile}}
