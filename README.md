@@ -9,7 +9,16 @@ The code is used to capture data from a range of sensors controlled by a Raspber
 ## Analytics
 
 The repo also includes code to parse the results of the experiments (contained in log files) and to create a (`DuckDB`) database which is then shared on the [MotherDuck](https://motherduck.com) platform.
-This is performed using the Jupyter notebooks in the `notebooks` directory.
+
+This is performed using the Jupyter notebooks in the `notebooks` directory. Specifically:
+
+- `notebooks/archive-analysis`
+- `notebooks/archive-experiment`
+- `notebooks/OCR-tests`
+
+The key Python code is in these notebooks and/or the supporting functions defined in:
+
+- `src/horse_logic/logfiles.py`
 
 ### Details
 
