@@ -6,11 +6,11 @@ default:
 reqs:
     pdm export --o requirements.txt --without-hashes --prod
 
-quarto notebook="notebooks/logfile-data-extraction.ipynb":
+quarto notebook="notebooks/logfile-reconciliation-RPE.ipynb":
     quarto render {{notebook}} --execute
 
-zip-quarto notebook="logfile-data-extraction":
-    zip -r analysis.zip notebooks/{{notebook}}.html notebooks/{{notebook}}_files/ data/results/notebooks/cb/*.csv
+zip-quarto notebook="notebooks/logfile-reconciliation-RPE":
+    zip -r analysis.zip {{notebook}}.html {{notebook}}_files/ data/results/notebooks/cb/*.csv
 
 zip-report report_html:
     #!/usr/bin/env bash

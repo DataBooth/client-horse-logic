@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, fields
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict
+from typing import List, Optional, Dict, Any, Tuple
 
 import pandas as pd
 from IPython.display import Markdown, display
@@ -90,8 +90,17 @@ class EventCB:
 
 
 class Logfile:
-    # Use the __init__ method to initialize the object attributes
-    def __init__(self, file_name, file_contents=None):
+    def __init__(self, file_name: str, file_contents: Optional[List[str]] = None) -> None:
+        """
+        Initialise a Logfile object.
+
+        Args:
+            file_name (str): The name of the log file.
+            file_contents (Optional[List[str]]): The contents of the log file as a list of strings.
+
+        Returns:
+            None
+        """
         self.file_name = Path(file_name).name
         # If file_contents is None, read the contents from the file
         if file_contents is None:
@@ -101,7 +110,16 @@ class Logfile:
             self.file_contents = file_contents
         self.num_lines = len(self.file_contents)
 
-    def parse_filename_components(self):
+    def parse_filename_components(self) -> Experiment:
+        """
+        Parse the components of the filename for RPE experiments.
+
+        Returns:
+            Experiment: An Experiment object containing the parsed information.
+
+        Raises:
+            ValueError: If the filename does not match the expected pattern.
+        """
         # Adjusted regular expression pattern to match 'nan' or numbers with optional decimal part
         pattern = r"(?P<suffix>[\w]+)_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<session_number>nan|\d+(\.\d+)?)_(?P<experiment_type>[\w-]+)\.log"
         match = re.match(pattern, self.file_name)
@@ -132,7 +150,16 @@ class Logfile:
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
 
-    def parse_filename_components_cog_bias(self):
+    def parse_filename_components_cog_bias(self) -> ExperimentCB:
+        """
+        Parse the components of the filename for cognitive bias experiments.
+
+        Returns:
+            Experiment: An Experiment object containing the parsed information.
+
+        Raises:
+            ValueError: If the filename does not match the expected pattern.
+        """
         # Adjusted regular expression pattern to match the new filename format
         pattern = r"Experiment_(?P<datetime_str>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+)_(?P<subject_name>[\w]+)_(?P<session_number>nan|\d+(\.\d+)?)_(?P<experiment_type>.+)\.log"
         match = re.match(pattern, self.file_name)
@@ -146,7 +173,7 @@ class Logfile:
                 components["session_number"] = None
             components["datetime"] = datetime.fromisoformat(components["datetime_str"])
             components["filename"] = self.file_name
-            return Experiment(
+            return ExperimentCB(
                 ExperimentID=None,  # ID is auto-generated or not needed for insertion
                 Cohort=None,        # This needs to be inserted from the external Cohort table
                 SubjectName=components["subject_name"],
@@ -161,8 +188,13 @@ class Logfile:
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
 
-    # Function to parse parameters from the log file
-    def parse_parameters(self):
+    def parse_parameters(self) -> Dict[str, Any]:
+        """
+        Parse the parameters from the log file.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the parsed parameters.
+        """
         params_pattern = r"PARAMETERS:\n({.*?})\n"
         file_content_str = "".join(self.file_contents)
         params_match = re.search(params_pattern, file_content_str, re.DOTALL)
@@ -173,7 +205,13 @@ class Logfile:
             return params_dict
         return {}
 
-    def parse_comments(self):
+    def parse_comments(self) -> str:
+        """
+        Parse comments from the log file.
+
+        Returns:
+            str: A string containing all comments found in the log file.
+        """
         # Join the list of strings into a single string if necessary
         file_content_str = (
             "".join(self.file_contents) if isinstance(self.file_contents, list) else self.file_contents
@@ -184,8 +222,14 @@ class Logfile:
         comment_text = " ".join(comment[1] for comment in comments)
         return comment_text
 
-    # Function to parse trials and events from the log file
-    def parse_trials_and_events(self):
+    def parse_trials_and_events(self) -> Tuple[Optional[List[Dict[str, Any]]], Optional[List[Dict[str, Any]]]]:
+        """
+        Parse trials and events from RPE log files.
+
+        Returns:
+            A tuple containing lists of trials and events.
+            Returns (None, None) if no data is found.
+        """
         trials = []
         events = []
         trial_pattern = r"Current trial: (\d+)"
@@ -210,7 +254,16 @@ class Logfile:
         return trials, events
 
 
-    def parse_trials_and_events_cog_bias(self):
+    def parse_trials_and_events_cog_bias(self) -> Optional[List[Dict[str, Any]]]:
+        """
+        Parse trials and events from cognitive bias log files.
+
+        # DRAFT Function to parse trials and events from the CB log files
+        # WARNING: This is a work-in-progress and is incomplete!
+
+        Returns:
+            A list of events if data is found, None otherwise.
+        """
         file_content_str = "".join(self.file_contents)
 
         direction = parse_direction(self.parse_comments())
@@ -251,13 +304,6 @@ class Logfile:
             return None, None
         return events
 
-    # Function to create tables from a SQL file
-    def create_tables_from_sql(sql_file_path, db_connection):
-        with open(sql_file_path, "r") as sql_file:
-            sql_commands = sql_file.read()
-            db_connection.execute(sql_commands)
-        logger.info("Tables created successfully.")
-
     def insert_record_to_database(self, con, record):
         table_name = record.__class__.__name__.lower() + 's'  # Assumes table name is plural of the class name
         columns = ', '.join(field.name for field in fields(record))
@@ -280,8 +326,19 @@ class Logfile:
 
 
 class Logs:
-    # Use the __init__ method to initialize the object attributes
-    def __init__(self, path, patterns=None, include=True, logfile_ext=".log"):
+    def __init__(self, path: str, patterns: Optional[List[str]] = None, include: bool = True, logfile_ext: str = ".log") -> None:
+        """
+        Initialise Logs object.
+
+        Args:
+            path (str): The directory path containing log files.
+            patterns (Optional[List[str]]): Patterns to match log files.
+            include (bool): Whether to include or exclude files matching the patterns.
+            logfile_ext (str): The file extension for log files.
+
+        Returns:
+            None
+        """
         self.path = path
         self.include = include
         self.logfiles = []  # A list of Logfile objects
@@ -297,7 +354,13 @@ class Logs:
             self.patterns = []
 
     # Define a method to load the log files from the directory
-    def load_logfiles(self):
+    def load_logfiles(self) -> None:
+        """
+        Load log files from the specified directory based on patterns.
+
+        Returns:
+            None
+        """
         matched_files = set()
         for pattern in self.patterns:
             matched_files.update(glob.glob(f"{self.path}/{pattern}"))
@@ -316,12 +379,16 @@ class Logs:
                 logfile = Logfile(file_name, file_contents)
                 self.logfiles.append(logfile)
 
-    def handle_specific_files(self, file_names, include=True):
+    def handle_specific_files(self, file_names: List[str], include: bool = True) -> None:
         """
         Handle specific file names to include or exclude.
 
-        :param file_names: List of file names to include or exclude.
-        :param include: Flag indicating whether to include (True) or exclude (False) the files.
+        Args:
+            file_names (List[str]): List of file names to include or exclude.
+            include (bool): Flag indicating whether to include (True) or exclude (False) the files.
+
+        Returns:
+            None
         """
         # Convert file_names to a set for faster operations
         file_names_set = set(file_names)
@@ -371,7 +438,16 @@ class Logs:
         else:
             logger.info(f"# Files specifically excluded: {excluded_count}")
 
-    def create_filename_components_dataframe(self, file_list):
+    def create_filename_components_dataframe(self, file_list: List[str]) -> pd.DataFrame:
+        """
+        Create a DataFrame containing filename components for RPE experiments.
+
+        Args:
+            file_list (List[str]): List of filenames to process.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing parsed filename components.
+        """
         # Initialize lists to hold the data
         data = {
             "original_filename": [],
@@ -405,7 +481,16 @@ class Logs:
         df = pd.DataFrame(data)
         return df
 
-    def create_filename_components_dataframe_cog_bias(self, file_list):
+    def create_filename_components_dataframe_cog_bias(self, file_list: List[str]) -> pd.DataFrame:
+        """
+        Create a DataFrame containing filename components for cognitive bias experiments.
+
+        Args:
+            file_list (List[str]): List of filenames to process.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing parsed filename components.
+        """
         # Initialize lists to hold the data
         data = {
             "original_filename": [],
@@ -439,7 +524,16 @@ class Logs:
         df = pd.DataFrame(data)
         return df
 
-    def load_specific_logfiles_from_csv(self, csv_file_path):
+    def load_specific_logfiles_from_csv(self, csv_file_path: str) -> None:
+        """
+        Load specific log files listed in a CSV file.
+
+        Args:
+            csv_file_path (str): Path to the CSV file containing log file names.
+
+        Returns:
+            None
+        """
         # Read the CSV file into a DataFrame, specifying that it has no header
         df = pd.read_csv(csv_file_path, header=None)
 
