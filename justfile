@@ -20,3 +20,21 @@ dir-report outfile="docs/complete_directory_structure.md":
     echo '```' > {{outfile}}
     tree --noreport --gitignore -I '__pycache__|*.csv|*.log' >> {{outfile}}
     echo '```' >> {{outfile}}
+
+# Export Jupyter notebook to Python and run it
+run-notebook notebook:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Extract directory and filename
+    notebook_dir=$(dirname "{{notebook}}")
+    notebook_name=$(basename "{{notebook}}")
+
+    echo "Converting {{notebook}} to Python script..."
+    jupyter nbconvert --to python "{{notebook}}" --TemplateExporter.exclude_raw=True
+
+    # Extract the base name without extension
+    base_name=$(basename "{{notebook}}" .ipynb)
+
+    echo "Running ${notebook_dir}/${base_name}.py..."
+    python "${notebook_dir}/${base_name}.py"

@@ -1,1 +1,4 @@
-SELECT 'Experiment_' || DateTime || '_' || SubjectName || '_' || CAST(TrialNumber AS VARCHAR) || '_' || ExperimentType || '.log' AS ReconstructedLogFileName FROM Experiments E JOIN Trials T ON E.ExperimentID = T.ExperimentID;
+SELECT
+    'Experiment_' || DateTime || '_' || SubjectName || '_' || CAST(TrialNumber AS VARCHAR) || '_' || ExperimentType || '.log' AS ReconstructedLogFileName
+FROM Experiments E
+    JOIN Trials T ON E.ExperimentID = T.ExperimentID;
