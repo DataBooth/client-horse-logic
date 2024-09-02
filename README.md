@@ -24,5 +24,10 @@ The key Python code is in these notebooks and/or the supporting functions define
 
 The key notebooks for performing the analysis are:
 
+#### RPE
+
+- `notebooks/logfile-reconciliation-RPE.ipynb` - explore log files and determine inclusion/exclusion of log files to be analysed. Key output is `all_files_included.csv` in the `data` directory
+
+#### CB
 
 ### Directory structure

@@ -1,5 +1,9 @@
 # https://just.systems/
 
+# Default output directory for PDF/HTML documents created from markdown
+default_output_dir := "docs/output"
+
+
 # List all just recipes
 default:
   @just --list
@@ -116,41 +120,34 @@ run-notebooks notebook1="notebooks/logfile-reconciliation-RPE.ipynb" notebook2="
         echo "Output has been captured for each notebook."
     fi
 
-# Convert markdown files to PDF
-convert-md-to-pdf md_pattern="docs/*.md" output_dir="docs/pdf_output":
-    #!/usr/bin/env bash
-    set -euo pipefail
 
-    # Check if pandoc is installed
+# Check if pandoc is installed
+check-pandoc:
+    #!/usr/bin/env bash
     if ! command -v pandoc &> /dev/null; then
         echo "Error: Pandoc is not installed. Please install pandoc to proceed."
         exit 1
     fi
 
-    # Get the directory of the justfile
-    justfile_dir=$(pwd)
-
-    # Match files
+# Match files and display them
+match-files md_pattern:
+    #!/usr/bin/env bash
+    set -euo pipefail
     shopt -s nullglob
     matched_files=({{md_pattern}})
     shopt -u nullglob
-
     if [ ${#matched_files[@]} -eq 0 ]; then
         echo "No files matched the pattern: {{md_pattern}}"
         exit 0
     fi
-
-    # Display matched files
     echo "Files to be converted:"
     for file in "${matched_files[@]}"; do
-        echo "  $justfile_dir/$file"
+        echo "  $(pwd)/$file"
     done
 
-    # Display output directory
-    full_output_dir="$justfile_dir/{{output_dir}}"
-    echo "Output directory: $full_output_dir"
-
-    # Ask for user confirmation
+# Ask for user confirmation
+confirm-action:
+    #!/usr/bin/env bash
     read -p "Proceed with conversion? [Y/n] " -n 1 -r user_input
     echo
     if [[ ! $user_input =~ ^[Yy]?$ ]]; then
@@ -158,18 +155,66 @@ convert-md-to-pdf md_pattern="docs/*.md" output_dir="docs/pdf_output":
         exit 0
     fi
 
+# Convert markdown to PDF
+convert-to-pdf file output_file:
+    pandoc "{{file}}" -o "{{output_file}}" \
+        --pdf-engine=xelatex \
+        -V mainfont="DejaVu Sans" \
+        -V monofont="DejaVu Sans Mono" \
+        --highlight-style=tango
+
+# Convert markdown to HTML
+convert-to-html file output_file:
+    pandoc "{{file}}" -o "{{output_file}}" \
+        -s --toc --toc-depth=2 \
+        --highlight-style=tango \
+        -c https://cdn.jsdelivr.net/npm/water.css@2/out/water.css
+
+convert-md md_pattern="docs/*.md" output_dir="docs/output" format="pdf":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Validate format
+    if [[ "{{format}}" != "pdf" && "{{format}}" != "html" ]]; then
+        echo "Error: Invalid format. Use 'pdf' or 'html'."
+        exit 1
+    fi
+
+    just match-files "{{md_pattern}}"
+
+    full_output_dir="$(pwd)/{{output_dir}}"
+    echo "Output directory: $full_output_dir"
+    echo "Output format: {{format}}"
+
+    just confirm-action
+
     # Ensure the output directory exists
     mkdir -p "$full_output_dir"
 
-    # Convert matching markdown files to PDF
-    for file in "${matched_files[@]}"; do
+    for file in {{md_pattern}}; do
         if [ -f "$file" ]; then
-            output_file="$full_output_dir/$(basename "${file%.md}.pdf")"
-            echo "Converting $justfile_dir/$file to $output_file"
-            pandoc "$file" -o "$output_file"
+            output_file="$full_output_dir/$(basename "${file%.md}.{{format}}")"
+            echo "Converting $file to $output_file"
+
+            if [ "{{format}}" = "pdf" ]; then
+                just convert-to-pdf "$file" "$output_file" || echo "Warning: Failed to convert $file to PDF. Skipping."
+            else
+                just convert-to-html "$file" "$output_file" || echo "Warning: Failed to convert $file to HTML. Skipping."
+            fi
         else
-            echo "Warning: $justfile_dir/$file not found or not a regular file. Skipping."
+            echo "Warning: $file not found or not a regular file. Skipping."
         fi
     done
 
-    echo "Conversion complete. PDFs are in $full_output_dir"
+    echo "Conversion complete. Output files are in $full_output_dir"
+
+
+
+# Show the values of the arguments
+# Show the values of the arguments
+show_args md_pattern="docs/*.md" output_dir="docs/output" format="pdf":
+    #!/usr/bin/env bash
+    echo "Argument values:"
+    echo "  md_pattern: {{md_pattern}}"
+    echo "  output_dir: {{output_dir}}"
+    echo "  format: {{format}}"
