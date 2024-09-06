@@ -60,3 +60,75 @@ Normalized Database Structure:
 - EventDateTime
 
 This structure allows you to link parameters and events back to their respective experiments and trials, maintaining referential integrity and enabling complex queries. Each event is recorded with its own timestamp, allowing for detailed analysis of the trial timeline.
+
+## RPE Experiments - Data Model
+
+erDiagram
+    Experiment ||--o{ Trial : contains
+    Trial ||--o{ Event : contains
+
+    Experiment {
+        int ExperimentID PK
+        string Cohort
+        string SubjectName
+        int SubjectNumber
+        int SessionNumber
+        string ExperimentType
+        string Comment
+        datetime DateTime
+        string LogFileName
+        dict Parameters
+    }
+
+    Trial {
+        int TrialID PK
+        int ExperimentID FK
+        int TrialNumber
+        datetime TrialStartTime
+        datetime TrialEndTime
+    }
+
+    Event {
+        int EventID PK
+        int TrialID FK
+        int EventNumber
+        datetime EventTime
+        string EventType
+        float EventElapsedTime
+    }
+
+## CB Experiments - Data Model
+
+erDiagram
+    ExperimentCB ||--o{ TrialCB : contains
+    TrialCB ||--o{ EventCB : contains
+
+    ExperimentCB {
+        int ExperimentID PK
+        string Cohort
+        string SubjectName
+        int SubjectNumber
+        int SessionNumber
+        string ExperimentType
+        string Comment
+        datetime DateTime
+        string LogFileName
+        dict Parameters
+    }
+
+    TrialCB {
+        int TrialID PK
+        int ExperimentID FK
+        int TrialNumber
+        datetime TrialStartTime
+        datetime TrialEndTime
+    }
+
+    EventCB {
+        int EventID PK
+        int TrialID FK
+        int EventNumber
+        datetime EventTime
+        string EventType
+        float EventElapsedTime
+    }
