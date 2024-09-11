@@ -56,6 +56,7 @@ class Event:
 
 # CB Experiments
 
+
 @dataclass
 class ExperimentCB:
     ExperimentID: int
@@ -69,24 +70,33 @@ class ExperimentCB:
     LogFileName: str
     Parameters: Dict
 
-
 @dataclass
 class TrialCB:
     TrialID: int
     ExperimentID: int
     TrialNumber: int
+    ResponseType: str
+    TrialSubType: str
+    Direction: str
+    CriterionType: Optional[str]
+    CriterionCount: Optional[float]
     TrialStartTime: datetime
     TrialEndTime: datetime
 
+@dataclass
+class ResponseCB:
+    ResponseID: int
+    TrialID: int
+    ResponseTime: Optional[float]
+    EventDateTime: datetime
 
 @dataclass
 class EventCB:
     EventID: int
     TrialID: int
-    EventNumber: int
-    EventTime: datetime
     EventType: str
-    EventElapsedTime: float
+    EventTime: datetime
+    ElapsedTime: float
 
 
 class Logfile:
@@ -104,8 +114,11 @@ class Logfile:
         self.file_name = Path(file_name).name
         # If file_contents is None, read the contents from the file
         if file_contents is None:
-            with open(file_name, "r") as file:
-                self.file_contents = file.readlines()
+            if Path(file_name).exists():
+                with open(file_name, "r") as file:
+                    self.file_contents = file.readlines()
+            else:
+                raise FileNotFoundError(f"File missing: {Path(file_name).resolve()}")
         else:
             self.file_contents = file_contents
         self.num_lines = len(self.file_contents)
@@ -254,55 +267,99 @@ class Logfile:
         return trials, events
 
 
-    def parse_trials_and_events_cog_bias(self) -> Optional[List[Dict[str, Any]]]:
-        """
-        Parse trials and events from cognitive bias log files.
+    def parse_direction(self, comments):
+            # Implement direction parsing logic here
+            pass
 
-        # DRAFT Function to parse trials and events from the CB log files
-        # WARNING: This is a work-in-progress and is incomplete!
-
-        Returns:
-            A list of events if data is found, None otherwise.
-        """
+    def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, List]]:
         file_content_str = "".join(self.file_contents)
 
-        direction = parse_direction(self.parse_comments())
+        direction = self.parse_direction(self.parse_comments())
         trial_start_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
         trial_start_match = re.search(trial_start_pattern, file_content_str)
         if trial_start_match:
-            TrialStartDateTime = datetime.fromisoformat(trial_start_match.group(1))
+            experiment_start_time = datetime.fromisoformat(trial_start_match.group(1))
         else:
             logger.error(f"{self.file_name} does not contain a trial start time.")
-            return None, None
+            return None
 
-        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): ((GO|NOGO) for Trial (\d+) - (P|N|M|NP|NN) - (positive|negative|median|near positive|near negative)( - response time \d+\.\d+)?( - (positive|negative) criterion count (\d+))?|Green button pressed - horse released)"
-        events = []
+        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): ((GO|NOGO) for Trial (\d+) - (P|N|M|NP|NN) - (positive|negative|median|near positive|near negative)( - response time (\d+\.\d+))?( - (positive|negative) criterion count (\d+))?|Green button pressed - horse released)"
         event_matches = re.findall(event_pattern, file_content_str)
-        previous_event_datetime = None
+
+        experiment = ExperimentCB(
+            ExperimentID=1,  # You'll need to determine how to assign this
+            Cohort="",  # Fill in with appropriate data
+            SubjectName="",  # Fill in with appropriate data
+            SubjectNumber=0,  # Fill in with appropriate data
+            SessionNumber=0,  # Fill in with appropriate data
+            ExperimentType="Cognitive Bias",
+            Comment=None,
+            DateTime=experiment_start_time,
+            LogFileName=self.file_name,
+            Parameters={}
+        )
+
+        trials = []
+        responses = []
+        events = []
+
+        current_trial = None
+        trial_id = 0
+        response_id = 0
+        event_id = 0
+
         for event in event_matches:
-            event_datetime_str, event_desc, response_type, trial_number, trial_sub_type, _, _, _, criterion_type, criterion_count = event
+            event_datetime_str, event_desc, response_type, trial_number, trial_sub_type, criterion_type, _, response_time, _, _, criterion_count = event
             event_datetime = datetime.fromisoformat(event_datetime_str)
-            ResponseTime = (event_datetime - previous_event_datetime).total_seconds() if response_type == "GO" and previous_event_datetime else None
-            ElapsedTime = (event_datetime - TrialStartDateTime).total_seconds()
-            if trial_number:  # Check if trial_number is not an empty string
-                events.append(
-                    {
-                        "TrialNumber": int(trial_number),
-                        "ResponseType": response_type,
-                        "TrialSubType": trial_sub_type,
-                        "EventDateTime": event_datetime,
-                        "Direction": direction,
-                        "CriterionType": criterion_type if criterion_count else None,
-                        "CriterionCount": int(criterion_count) if criterion_count else None,
-                        "ResponseTime": ResponseTime,
-                        "ElapsedTime": ElapsedTime,
-                    }
+
+            if trial_number:
+                trial_id += 1
+                current_trial = TrialCB(
+                    TrialID=trial_id,
+                    ExperimentID=experiment.ExperimentID,
+                    TrialNumber=int(trial_number),
+                    ResponseType=response_type,
+                    TrialSubType=trial_sub_type,
+                    Direction=direction,
+                    CriterionType=criterion_type if criterion_count else None,
+                    CriterionCount=float(criterion_count) if criterion_count else None,
+                    TrialStartTime=event_datetime,
+                    TrialEndTime=event_datetime  # This will be updated when the next trial starts
                 )
-            previous_event_datetime = event_datetime
-        if events == []:
+                trials.append(current_trial)
+
+                if response_type == "GO" and response_time:
+                    response_id += 1
+                    responses.append(ResponseCB(
+                        ResponseID=response_id,
+                        TrialID=current_trial.TrialID,
+                        ResponseTime=float(response_time),
+                        EventDateTime=event_datetime
+                    ))
+
+            if current_trial:
+                event_id += 1
+                events.append(EventCB(
+                    EventID=event_id,
+                    TrialID=current_trial.TrialID,
+                    EventType=event_desc,
+                    EventTime=event_datetime,
+                    ElapsedTime=(event_datetime - experiment_start_time).total_seconds()
+                ))
+
+                # Update the end time of the current trial
+                current_trial.TrialEndTime = event_datetime
+
+        if not trials:
             logger.error(f"{self.file_name} contains no data - exclude from analysis.")
-            return None, None
-        return events
+            return None
+
+        return {
+            "experiment": experiment,
+            "trials": trials,
+            "responses": responses,
+            "events": events
+        }
 
     def insert_record_to_database(self, con, record):
         table_name = record.__class__.__name__.lower() + 's'  # Assumes table name is plural of the class name
@@ -504,20 +561,20 @@ class Logs:
         # Process included and excluded files
         # for file_list in (self.included_files, self.excluded_files):
         for file_name in file_list:
-            try:
-                # Parse the filename components
-                experiment = Logfile(file_name, "").parse_filename_components_cog_bias()
-                if experiment is not None:
-                    data["original_filename"].append(experiment.LogFileName)
-                    data["suffix"].append("Experiment")
-                    data["datetime"].append(experiment.DateTime)
-                    data["subject_name"].append(experiment.SubjectName)
-                    data["session_number"].append(experiment.SessionNumber)
-                    data["experiment_type"].append(experiment.ExperimentType)
-                    # data['filename']
-                else:
-                    logger.info(f"Can't match {file_name}")
-            except ValueError as e:
+            #try:
+            # Parse the filename components
+            experiment = Logfile(file_name, "").parse_filename_components_cog_bias()
+            if experiment is not None:
+                data["original_filename"].append(experiment.LogFileName)
+                data["suffix"].append("Experiment")
+                data["datetime"].append(experiment.DateTime)
+                data["subject_name"].append(experiment.SubjectName)
+                data["session_number"].append(experiment.SessionNumber)
+                data["experiment_type"].append(experiment.ExperimentType)
+                # data['filename']
+            else:
+                logger.info(f"Can't match {file_name}")
+            #except ValueError as e:
                 logger.info(f"Error processing file {file_name}: {e}")
 
         # Create a DataFrame from the collected data
