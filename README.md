@@ -31,3 +31,10 @@ The key notebooks for performing the analysis are:
 #### CB
 
 ### Directory structure
+
+
+
+
+## TODOs
+
+- Pass MotherDuck secret key to Cath? (actually explain how to use MD if desired)
