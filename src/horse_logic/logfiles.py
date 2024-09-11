@@ -64,6 +64,7 @@ class ExperimentCB:
     SubjectName: str
     SubjectNumber: int
     SessionNumber: int
+    SessionType: str  # New field: "training" or "test"
     ExperimentType: str
     Comment: Optional[str]
     DateTime: datetime
@@ -82,6 +83,7 @@ class TrialCB:
     CriterionCount: Optional[float]
     TrialStartTime: datetime
     TrialEndTime: datetime
+    SessionType: str  # New field: "training" or "test"
 
 @dataclass
 class ResponseCB:
