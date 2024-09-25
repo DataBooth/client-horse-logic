@@ -188,12 +188,18 @@ class Logfile:
                 components["session_number"] = None
             components["datetime"] = datetime.fromisoformat(components["datetime_str"])
             components["filename"] = self.file_name
+
+            # Determine SessionType based on the presence of criterion count/type
+            has_criterion = 'criterion count' in self.file_contents or 'criterion type' in self.file_contents
+            session_type = "training" if has_criterion else "test"
+
             return ExperimentCB(
                 ExperimentID=None,  # ID is auto-generated or not needed for insertion
                 Cohort=None,        # This needs to be inserted from the external Cohort table
                 SubjectName=components["subject_name"],
                 SubjectNumber=None,  # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],
+                SessionType=session_type,
                 ExperimentType=components["experiment_type"],
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
@@ -202,6 +208,7 @@ class Logfile:
             )
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
+
 
     def parse_parameters(self) -> Dict[str, Any]:
         """
@@ -286,82 +293,104 @@ class Logfile:
             return None
 
         event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): ((GO|NOGO) for Trial (\d+) - (P|N|M|NP|NN) - (positive|negative|median|near positive|near negative)( - response time (\d+\.\d+))?( - (positive|negative) criterion count (\d+))?|Green button pressed - horse released)"
-        event_matches = re.findall(event_pattern, file_content_str)
+        # event_matches = re.findall(event_pattern, file_content_str)
 
-        experiment = ExperimentCB(
-            ExperimentID=1,  # You'll need to determine how to assign this
-            Cohort="",  # Fill in with appropriate data
-            SubjectName="",  # Fill in with appropriate data
-            SubjectNumber=0,  # Fill in with appropriate data
-            SessionNumber=0,  # Fill in with appropriate data
-            ExperimentType="Cognitive Bias",
-            Comment=None,
-            DateTime=experiment_start_time,
-            LogFileName=self.file_name,
-            Parameters={}
-        )
+        # experiment = ExperimentCB(
+        #     ExperimentID=1,  # You'll need to determine how to assign this
+        #     Cohort="",  # Fill in with appropriate data
+        #     SubjectName="",  # Fill in with appropriate data
+        #     SubjectNumber=0,  # Fill in with appropriate data
+        #     SessionNumber=0,  # Fill in with appropriate data
+        #     SessionType="",
+        #     ExperimentType="Cognitive Bias",
+        #     Comment=None,
+        #     DateTime=experiment_start_time,
+        #     LogFileName=self.file_name,
+        #     Parameters={}
+        # )
 
         trials = []
-        responses = []
         events = []
-
-        current_trial = None
-        trial_id = 0
-        response_id = 0
-        event_id = 0
-
-        for event in event_matches:
-            event_datetime_str, event_desc, response_type, trial_number, trial_sub_type, criterion_type, _, response_time, _, _, criterion_count = event
-            event_datetime = datetime.fromisoformat(event_datetime_str)
-
-            if trial_number:
-                trial_id += 1
-                current_trial = TrialCB(
-                    TrialID=trial_id,
-                    ExperimentID=experiment.ExperimentID,
-                    TrialNumber=int(trial_number),
-                    ResponseType=response_type,
-                    TrialSubType=trial_sub_type,
-                    Direction=direction,
-                    CriterionType=criterion_type if criterion_count else None,
-                    CriterionCount=float(criterion_count) if criterion_count else None,
-                    TrialStartTime=event_datetime,
-                    TrialEndTime=event_datetime  # This will be updated when the next trial starts
+        trial_pattern = r"Current trial: (\d+)"
+        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): (.+)"
+        file_content_str = "".join(self.file_contents)
+        trials_split = re.split(trial_pattern, file_content_str)
+        for i in range(1, len(trials_split), 2):
+            trial_number = int(trials_split[i])
+            trial_events = re.findall(event_pattern, trials_split[i + 1])
+            trials.append({"TrialNumber": trial_number})
+            for event_datetime, event_desc in trial_events:
+                events.append(
+                    {
+                        "TrialNumber": trial_number,
+                        "EventType": event_desc,
+                        "EventDateTime": event_datetime,
+                    }
                 )
-                trials.append(current_trial)
 
-                if response_type == "GO" and response_time:
-                    response_id += 1
-                    responses.append(ResponseCB(
-                        ResponseID=response_id,
-                        TrialID=current_trial.TrialID,
-                        ResponseTime=float(response_time),
-                        EventDateTime=event_datetime
-                    ))
+        # current_trial = None
+        # trial_id = 0
+        # response_id = 0
+        # event_id = 0
 
-            if current_trial:
-                event_id += 1
-                events.append(EventCB(
-                    EventID=event_id,
-                    TrialID=current_trial.TrialID,
-                    EventType=event_desc,
-                    EventTime=event_datetime,
-                    ElapsedTime=(event_datetime - experiment_start_time).total_seconds()
-                ))
+        # for event in event_matches:
+        #     event_datetime_str, event_desc, response_type, trial_number, trial_sub_type, criterion_type, _, response_time, _, _, criterion_count = event
+        #     event_datetime = datetime.fromisoformat(event_datetime_str)
 
-                # Update the end time of the current trial
-                current_trial.TrialEndTime = event_datetime
+        #     if trial_number:
+        #         trial_id += 1
+        #         current_trial = TrialCB(
+        #             TrialID=trial_id,
+        #             ExperimentID=experiment.ExperimentID,
+        #             TrialNumber=int(trial_number),
+        #             ResponseType=response_type,
+        #             TrialSubType=trial_sub_type,
+        #             Direction=direction,
+        #             CriterionType=criterion_type if criterion_count else None,
+        #             CriterionCount=float(criterion_count) if criterion_count else None,
+        #             TrialStartTime=event_datetime,
+        #             TrialEndTime=event_datetime  # This will be updated when the next trial starts
+        #         )
+        #         trials.append(current_trial)
 
-        if not trials:
+        #         if response_type == "GO" and response_time:
+        #             response_id += 1
+        #             responses.append(ResponseCB(
+        #                 ResponseID=response_id,
+        #                 TrialID=current_trial.TrialID,
+        #                 ResponseTime=float(response_time),
+        #                 EventDateTime=event_datetime
+        #             ))
+
+        #     if current_trial:
+        #         event_id += 1
+        #         events.append(EventCB(
+        #             EventID=event_id,
+        #             TrialID=current_trial.TrialID,
+        #             EventType=event_desc,
+        #             EventTime=event_datetime,
+        #             ElapsedTime=(event_datetime - experiment_start_time).total_seconds()
+        #         ))
+
+        #         # Update the end time of the current trial
+        #         current_trial.TrialEndTime = event_datetime
+
+        # if not trials:
+        #     logger.error(f"{self.file_name} contains no data - exclude from analysis.")
+        #     return None
+
+        if trials == [] or events == []:
             logger.error(f"{self.file_name} contains no data - exclude from analysis.")
-            return None
+            return None, None
+        return trials, events
 
-        return {
-            "experiment": experiment,
-            "trials": trials,
-            "responses": responses,
-            "events": events
-        }
+        # return {
+        #     "experiment": experiment,
+        #     "trials": trials,
+        #     "responses": responses,
+        #     "events": events
+        # }
+
 
     def insert_record_to_database(self, con, record):
         table_name = record.__class__.__name__.lower() + 's'  # Assumes table name is plural of the class name
@@ -376,7 +405,6 @@ class Logfile:
         query = f'INSERT INTO {table_name} ({columns}) VALUES ({placeholders})'
         con.execute(query, tuple(values))
 
-    # Use the __str__ method to control how the object is represented as a string
     def __str__(self):
         return f"Logfile: {self.file_name}, {self.num_lines} lines"
 
