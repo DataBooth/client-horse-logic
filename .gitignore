@@ -1,3 +1,5 @@
+docs/tmp_files/
+notebooks/quarto_output/
 uncommitted/
 .pdm-build/
 .DS_Store
