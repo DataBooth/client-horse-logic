@@ -143,108 +143,102 @@
 142,Experiment_2023-11-13T00:39:24.776854_gio_1.0_Training - fixed.log
 143,Experiment_2023-11-13T01:06:46.118598_dusty_1.0_Training - fixed.log
 144,Experiment_2023-11-13T01:52:41.875007_freya_nan_Training - fixed.log
-145,Experiment_2023-11-13T02:29:52.642650_olive_nan_Training - fixed.log
-146,Experiment_2023-11-13T03:05:04.626964_pumba_nan_Training - fixed.log
-147,Experiment_2023-11-13T04:02:49.575872_clover_nan_Training - fixed.log
-148,Experiment_2023-11-13T04:50:56.054932_jelly_2.0_Training - fixed.log
-149,Experiment_2023-11-13T05:23:15.688175_smudge_2.0_Training - fixed.log
-150,Experiment_2023-11-13T06:05:07.391993_george_2.0_Training - fixed.log
-151,Experiment_2023-11-13T06:36:50.258957_myrtle_2.0_Training - fixed.log
-152,Experiment_2023-11-13T07:17:20.615404_yoshi_2.0_Training - fixed.log
-153,Experiment_2023-11-13T07:47:14.435782_nix_2.0_Training - fixed.log
-154,Experiment_2023-11-13T08:28:59.797750_gio_2.0_Training - fixed.log
-155,Experiment_2023-11-13T10:22:11.789817_dusty_2.0_Training - fixed.log
-156,Experiment_2023-11-13T10:57:03.527161_freya_nan_Training - fixed.log
-157,Experiment_2023-11-13T11:33:46.376405_olive_nan_Training - fixed.log
-158,Experiment_2023-11-13T12:06:45.400077_pumba_nan_Training - fixed.log
-159,Experiment_2023-11-13T12:39:28.591968_clover_nan_Training - fixed.log
-160,Experiment_2023-11-13T13:01:26.435669_clover_nan_Training - fixed.log
-161,Experiment_2023-11-13T13:32:28.364484_jelly_3.0_Training - fixed.log
-162,Experiment_2023-11-13T14:11:10.054657_smudge_3.0_Training - fixed.log
-163,Experiment_2023-11-13T14:49:56.787891_george_3.0_Training randomised Type 1.log
-164,Experiment_2023-11-13T15:16:40.151932_myrtle_3.0_Training randomised Type 1.log
-165,Experiment_2023-11-13T16:03:04.381618_yoshi_3.0_Training randomised Type 1.log
-166,Experiment_2023-11-13T16:34:23.409480_nix_3.0_Training randomised Type 1.log
-167,Experiment_2023-11-13T17:24:29.152222_gio_3.0_Training randomised Type 1.log
-168,Experiment_2023-11-13T18:03:46.698927_dusty_3.0_Training randomised Type 1.log
-169,Experiment_2023-11-13T19:16:57.507097_freya_nan_Training randomised Type 1.log
-170,Experiment_2023-11-13T19:19:51.364628_freya_nan_Training randomised Type 1.log
-171,Experiment_2023-11-13T20:03:39.068756_olive_nan_Training - fixed.log
-172,Experiment_2023-11-13T20:49:33.970464_clover_nan_Training randomised Type 1.log
-173,Experiment_2023-11-13T20:54:16.427672_clover_nan_Training randomised Type 1.log
-174,Experiment_2023-11-13T21:26:18.412625_pumba_nan_Training - fixed.log
-175,Experiment_2023-11-13T23:02:01.120208_jelly_4.0_Training - fixed.log
-176,Experiment_2023-11-13T23:31:59.936909_smudge_4.0_Training randomised Type 1.log
-177,Experiment_2023-11-14T00:11:57.637594_george_4.0_Training randomised Type 2.log
-178,Experiment_2023-11-14T00:25:42.956340_george_5.0_Test Type 1.log
-179,Experiment_2023-11-14T00:45:14.508317_myrtle_4.0_Training randomised Type 2.log
-180,Experiment_2023-11-14T01:18:45.941991_myrtle_5.0_Training randomised Type 2.log
-181,Experiment_2023-11-14T01:55:54.666841_yoshi_4.0_Training randomised Type 1.log
-182,Experiment_2023-11-14T02:26:16.452913_nix_4.0_Test Type 1.log
-183,Experiment_2023-11-14T04:07:06.316598_gio_4.0_Training randomised Type 2.log
-184,Experiment_2023-11-14T04:38:56.660845_dusty_4.0_Training randomised Type 2.log
-185,Experiment_2023-11-14T05:29:24.069610_freya_nan_Test Type 1.log
-186,Experiment_2023-11-14T05:58:36.907156_olive_nan_Training randomised Type 1.log
-187,Experiment_2023-11-14T06:35:09.308410_pumba_nan_Test Type 1.log
-188,Experiment_2023-11-14T07:07:17.918670_pumba_nan_Training randomised Type 1.log
-189,Experiment_2023-11-14T07:17:26.885747_clover_nan_Training randomised Type 2.log
-190,Experiment_2023-11-14T08:02:44.063274_nix_5.0_Training randomised Type 2.log
-191,Experiment_2023-11-14T08:46:04.505826_jelly_5.0_Training randomised Type 1.log
-192,Experiment_2023-11-14T09:21:32.260775_smudge_5.0_Training randomised Type 2.log
-193,Experiment_2023-11-14T10:23:47.643202_myrtle_6.0_Training randomised Type 1.log
-194,Experiment_2023-11-14T11:03:25.088331_nix_6.0_Training - fixed.log
-195,Experiment_2023-11-14T11:07:04.244882_nix_7.0_Training randomised Type 1.log
-196,Experiment_2023-11-14T11:34:20.820883_yoshi_5.0_Training randomised Type 2.log
-197,Experiment_2023-11-14T12:05:21.440157_dusty_5.0_Training - fixed.log
-198,Experiment_2023-11-14T12:13:40.543722_dusty_6.0_Training randomised Type 1.log
-199,Experiment_2023-11-14T12:37:30.469954_gio_5.0_Test Type 1.log
-200,Experiment_2023-11-14T14:59:07.142800_olive_nan_Training randomised Type 2.log
-201,Experiment_2023-11-14T15:40:26.284336_pumba_nan_Training randomised Type 2.log
-202,Experiment_2023-11-14T16:29:57.013745_clover_nan_Test Type 1.log
-203,Experiment_2023-11-14T17:14:25.139579_jelly_6.0_Test Type 1.log
-204,Experiment_2023-11-14T17:33:48.603698_smudge_6.0_Training randomised Type 1.log
-205,Experiment_2023-11-14T18:44:47.627391_myrtle_7.0_Training randomised Type 2.log
-206,Experiment_2023-11-14T18:48:28.476282_myrtle_8.0_Test Type 1.log
-207,Experiment_2023-11-14T19:16:58.918521_yoshi_6.0_Training randomised Type 1.log
-208,Experiment_2023-11-14T19:42:46.106423_nix_8.0_Test Type 1.log
-209,Experiment_2023-11-14T20:37:30.423056_dusty_7.0_Test Type 1.log
-210,Experiment_2023-11-14T23:17:57.967289_freya_nan_Test Type 2.log
-211,Experiment_2023-11-14T23:36:17.533465_olive_nan_Test Type 1.log
-212,Experiment_2023-11-15T00:06:05.447953_pumba_nan_Test Type 1.log
-213,Experiment_2023-11-15T00:39:50.244185_clover_nan_Test Type 1.log
-214,Experiment_2023-11-15T02:11:18.965110_smudge_7.0_Test Type 1.log
-215,Experiment_2023-11-15T02:59:50.231712_george_6.0_Test Type 2.log
-216,Experiment_2023-11-15T03:51:01.169253_yoshi_7.0_Training - fixed.log
-217,Experiment_2023-11-15T03:51:22.577702_yoshi_8.0_Test Type 1.log
-218,Experiment_2023-11-15T04:42:42.109160_nix_9.0_Test Type 1.log
-219,Experiment_2023-11-15T05:22:53.513691_gio_6.0_Test Type 2.log
-220,Experiment_2023-11-15T16:04:18.871968_jelly_7.0_Test Type 2.log
-221,Experiment_2023-11-15T16:42:36.211643_smudge_8.0_Test Type 2.log
-222,Experiment_2023-11-15T17:59:06.826933_myrtle_9.0_Test Type 2.log
-223,Experiment_2023-11-15T18:35:59.371714_yoshi_9.0_Test Type 2.log
-224,Experiment_2023-11-15T20:13:26.521959_dusty_8.0_Test Type 2.log
-225,Experiment_2023-11-15T23:18:27.463685_clover_nan_Test Type 2.log
-226,Experiment_2023-11-16T00:37:29.832581_pumba_nan_Test Type 2.log
-227,Experiment_2023-11-16T05:15:17.737341_freya_nan_Test Type 3.log
-228,Experiment_2023-11-16T07:57:12.097353_george_7.0_Test Type 3.log
-229,Experiment_2023-11-16T09:12:31.465402_nix_10.0_Test Type 3.log
-230,Experiment_2023-11-16T09:54:53.813828_gio_7.0_Test Type 3.log
-231,Experiment_2023-11-16T11:37:18.984569_freya_nan_Test Type 1.log
-232,Experiment_2023-11-16T13:01:14.550048_jelly_8.0_Test Type 3.log
-233,Experiment_2023-11-16T13:46:25.228604_smudge_9.0_Test Type 3.log
-234,Experiment_2023-11-16T14:31:05.230974_george_8.0_Test Type 1.log
-235,Experiment_2023-11-16T15:46:42.899255_nix_11.0_Test Type 1.log
-236,Experiment_2023-11-16T17:47:36.706980_gio_8.0_Test Type 1.log
-237,Experiment_2023-11-16T17:55:24.333022_gio_9.0_Test Type 1.log
-238,Experiment_2023-11-16T19:24:59.492473_jelly_9.0_Test Type 1.log
-239,Experiment_2023-11-16T20:27:00.214523_smudge_10.0_Test Type 1.log
-240,Experiment_2023-11-16T21:17:46.006067_myrtle_10.0_Test Type 3.log
-241,Experiment_2023-11-16T22:01:25.798273_yoshi_10.0_Test Type 3.log
-242,Experiment_2023-11-16T23:55:33.357304_dusty_9.0_Test Type 3.log
-243,Experiment_2023-11-17T00:36:27.593791_pumba_nan_Test Type 3.log
-244,Experiment_2023-11-17T01:23:36.375164_clover_nan_Test Type 3.log
-245,Experiment_2023-11-17T02:45:25.056724_myrtle_11.0_Test Type 1.log
-246,Experiment_2023-11-17T03:22:54.109367_yoshi_11.0_Test Type 1.log
-247,Experiment_2023-11-17T04:05:53.213724_dusty_10.0_Test Type 1.log
-248,Experiment_2023-11-17T04:39:51.602365_dusty_11.0_Test Type 1.log
-249,Experiment_2023-11-17T05:22:49.445377_clover_nan_Test Type 1.log
+145,Experiment_2023-11-13T03:05:04.626964_pumba_nan_Training - fixed.log
+146,Experiment_2023-11-13T04:02:49.575872_clover_nan_Training - fixed.log
+147,Experiment_2023-11-13T04:50:56.054932_jelly_2.0_Training - fixed.log
+148,Experiment_2023-11-13T05:23:15.688175_smudge_2.0_Training - fixed.log
+149,Experiment_2023-11-13T06:05:07.391993_george_2.0_Training - fixed.log
+150,Experiment_2023-11-13T06:36:50.258957_myrtle_2.0_Training - fixed.log
+151,Experiment_2023-11-13T07:17:20.615404_yoshi_2.0_Training - fixed.log
+152,Experiment_2023-11-13T07:47:14.435782_nix_2.0_Training - fixed.log
+153,Experiment_2023-11-13T08:28:59.797750_gio_2.0_Training - fixed.log
+154,Experiment_2023-11-13T10:22:11.789817_dusty_2.0_Training - fixed.log
+155,Experiment_2023-11-13T10:57:03.527161_freya_nan_Training - fixed.log
+156,Experiment_2023-11-13T12:06:45.400077_pumba_nan_Training - fixed.log
+157,Experiment_2023-11-13T12:39:28.591968_clover_nan_Training - fixed.log
+158,Experiment_2023-11-13T13:01:26.435669_clover_nan_Training - fixed.log
+159,Experiment_2023-11-13T13:32:28.364484_jelly_3.0_Training - fixed.log
+160,Experiment_2023-11-13T14:11:10.054657_smudge_3.0_Training - fixed.log
+161,Experiment_2023-11-13T14:49:56.787891_george_3.0_Training randomised Type 1.log
+162,Experiment_2023-11-13T15:16:40.151932_myrtle_3.0_Training randomised Type 1.log
+163,Experiment_2023-11-13T16:03:04.381618_yoshi_3.0_Training randomised Type 1.log
+164,Experiment_2023-11-13T16:34:23.409480_nix_3.0_Training randomised Type 1.log
+165,Experiment_2023-11-13T17:24:29.152222_gio_3.0_Training randomised Type 1.log
+166,Experiment_2023-11-13T18:03:46.698927_dusty_3.0_Training randomised Type 1.log
+167,Experiment_2023-11-13T19:16:57.507097_freya_nan_Training randomised Type 1.log
+168,Experiment_2023-11-13T19:19:51.364628_freya_nan_Training randomised Type 1.log
+169,Experiment_2023-11-13T20:49:33.970464_clover_nan_Training randomised Type 1.log
+170,Experiment_2023-11-13T20:54:16.427672_clover_nan_Training randomised Type 1.log
+171,Experiment_2023-11-13T21:26:18.412625_pumba_nan_Training - fixed.log
+172,Experiment_2023-11-13T23:02:01.120208_jelly_4.0_Training - fixed.log
+173,Experiment_2023-11-13T23:31:59.936909_smudge_4.0_Training randomised Type 1.log
+174,Experiment_2023-11-14T00:11:57.637594_george_4.0_Training randomised Type 2.log
+175,Experiment_2023-11-14T00:25:42.956340_george_5.0_Test Type 1.log
+176,Experiment_2023-11-14T00:45:14.508317_myrtle_4.0_Training randomised Type 2.log
+177,Experiment_2023-11-14T01:18:45.941991_myrtle_5.0_Training randomised Type 2.log
+178,Experiment_2023-11-14T01:55:54.666841_yoshi_4.0_Training randomised Type 1.log
+179,Experiment_2023-11-14T02:26:16.452913_nix_4.0_Test Type 1.log
+180,Experiment_2023-11-14T04:07:06.316598_gio_4.0_Training randomised Type 2.log
+181,Experiment_2023-11-14T04:38:56.660845_dusty_4.0_Training randomised Type 2.log
+182,Experiment_2023-11-14T05:29:24.069610_freya_nan_Test Type 1.log
+183,Experiment_2023-11-14T06:35:09.308410_pumba_nan_Test Type 1.log
+184,Experiment_2023-11-14T07:07:17.918670_pumba_nan_Training randomised Type 1.log
+185,Experiment_2023-11-14T07:17:26.885747_clover_nan_Training randomised Type 2.log
+186,Experiment_2023-11-14T08:02:44.063274_nix_5.0_Training randomised Type 2.log
+187,Experiment_2023-11-14T08:46:04.505826_jelly_5.0_Training randomised Type 1.log
+188,Experiment_2023-11-14T09:21:32.260775_smudge_5.0_Training randomised Type 2.log
+189,Experiment_2023-11-14T10:23:47.643202_myrtle_6.0_Training randomised Type 1.log
+190,Experiment_2023-11-14T11:03:25.088331_nix_6.0_Training - fixed.log
+191,Experiment_2023-11-14T11:07:04.244882_nix_7.0_Training randomised Type 1.log
+192,Experiment_2023-11-14T11:34:20.820883_yoshi_5.0_Training randomised Type 2.log
+193,Experiment_2023-11-14T12:05:21.440157_dusty_5.0_Training - fixed.log
+194,Experiment_2023-11-14T12:13:40.543722_dusty_6.0_Training randomised Type 1.log
+195,Experiment_2023-11-14T12:37:30.469954_gio_5.0_Test Type 1.log
+196,Experiment_2023-11-14T15:40:26.284336_pumba_nan_Training randomised Type 2.log
+197,Experiment_2023-11-14T16:29:57.013745_clover_nan_Test Type 1.log
+198,Experiment_2023-11-14T17:14:25.139579_jelly_6.0_Test Type 1.log
+199,Experiment_2023-11-14T17:33:48.603698_smudge_6.0_Training randomised Type 1.log
+200,Experiment_2023-11-14T18:44:47.627391_myrtle_7.0_Training randomised Type 2.log
+201,Experiment_2023-11-14T18:48:28.476282_myrtle_8.0_Test Type 1.log
+202,Experiment_2023-11-14T19:16:58.918521_yoshi_6.0_Training randomised Type 1.log
+203,Experiment_2023-11-14T19:42:46.106423_nix_8.0_Test Type 1.log
+204,Experiment_2023-11-14T20:37:30.423056_dusty_7.0_Test Type 1.log
+205,Experiment_2023-11-14T23:17:57.967289_freya_nan_Test Type 2.log
+206,Experiment_2023-11-15T00:06:05.447953_pumba_nan_Test Type 1.log
+207,Experiment_2023-11-15T00:39:50.244185_clover_nan_Test Type 1.log
+208,Experiment_2023-11-15T02:11:18.965110_smudge_7.0_Test Type 1.log
+209,Experiment_2023-11-15T02:59:50.231712_george_6.0_Test Type 2.log
+210,Experiment_2023-11-15T03:51:01.169253_yoshi_7.0_Training - fixed.log
+211,Experiment_2023-11-15T03:51:22.577702_yoshi_8.0_Test Type 1.log
+212,Experiment_2023-11-15T04:42:42.109160_nix_9.0_Test Type 1.log
+213,Experiment_2023-11-15T05:22:53.513691_gio_6.0_Test Type 2.log
+214,Experiment_2023-11-15T16:04:18.871968_jelly_7.0_Test Type 2.log
+215,Experiment_2023-11-15T16:42:36.211643_smudge_8.0_Test Type 2.log
+216,Experiment_2023-11-15T17:59:06.826933_myrtle_9.0_Test Type 2.log
+217,Experiment_2023-11-15T18:35:59.371714_yoshi_9.0_Test Type 2.log
+218,Experiment_2023-11-15T20:13:26.521959_dusty_8.0_Test Type 2.log
+219,Experiment_2023-11-15T23:18:27.463685_clover_nan_Test Type 2.log
+220,Experiment_2023-11-16T00:37:29.832581_pumba_nan_Test Type 2.log
+221,Experiment_2023-11-16T05:15:17.737341_freya_nan_Test Type 3.log
+222,Experiment_2023-11-16T07:57:12.097353_george_7.0_Test Type 3.log
+223,Experiment_2023-11-16T09:12:31.465402_nix_10.0_Test Type 3.log
+224,Experiment_2023-11-16T09:54:53.813828_gio_7.0_Test Type 3.log
+225,Experiment_2023-11-16T11:37:18.984569_freya_nan_Test Type 1.log
+226,Experiment_2023-11-16T13:01:14.550048_jelly_8.0_Test Type 3.log
+227,Experiment_2023-11-16T13:46:25.228604_smudge_9.0_Test Type 3.log
+228,Experiment_2023-11-16T14:31:05.230974_george_8.0_Test Type 1.log
+229,Experiment_2023-11-16T15:46:42.899255_nix_11.0_Test Type 1.log
+230,Experiment_2023-11-16T17:47:36.706980_gio_8.0_Test Type 1.log
+231,Experiment_2023-11-16T17:55:24.333022_gio_9.0_Test Type 1.log
+232,Experiment_2023-11-16T19:24:59.492473_jelly_9.0_Test Type 1.log
+233,Experiment_2023-11-16T20:27:00.214523_smudge_10.0_Test Type 1.log
+234,Experiment_2023-11-16T21:17:46.006067_myrtle_10.0_Test Type 3.log
+235,Experiment_2023-11-16T22:01:25.798273_yoshi_10.0_Test Type 3.log
+236,Experiment_2023-11-16T23:55:33.357304_dusty_9.0_Test Type 3.log
+237,Experiment_2023-11-17T00:36:27.593791_pumba_nan_Test Type 3.log
+238,Experiment_2023-11-17T01:23:36.375164_clover_nan_Test Type 3.log
+239,Experiment_2023-11-17T02:45:25.056724_myrtle_11.0_Test Type 1.log
+240,Experiment_2023-11-17T03:22:54.109367_yoshi_11.0_Test Type 1.log
+241,Experiment_2023-11-17T04:05:53.213724_dusty_10.0_Test Type 1.log
+242,Experiment_2023-11-17T04:39:51.602365_dusty_11.0_Test Type 1.log
+243,Experiment_2023-11-17T05:22:49.445377_clover_nan_Test Type 1.log
