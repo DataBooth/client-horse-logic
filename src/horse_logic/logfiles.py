@@ -10,6 +10,7 @@ import pandas as pd
 from IPython.display import Markdown, display
 from loguru import logger
 
+
 def parse_direction(comment):
     comment_lower = comment.lower()
     if "right" in comment_lower:
@@ -19,7 +20,9 @@ def parse_direction(comment):
     else:
         return None
 
+
 # RPE Experiments
+
 
 @dataclass
 class Experiment:
@@ -71,6 +74,7 @@ class ExperimentCB:
     LogFileName: str
     Parameters: Dict
 
+
 @dataclass
 class TrialCB:
     TrialID: int
@@ -85,12 +89,14 @@ class TrialCB:
     TrialEndTime: datetime
     SessionType: str  # New field: "training" or "test"
 
+
 @dataclass
 class ResponseCB:
     ResponseID: int
     TrialID: int
     ResponseTime: Optional[float]
     EventDateTime: datetime
+
 
 @dataclass
 class EventCB:
@@ -160,7 +166,7 @@ class Logfile:
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
                 LogFileName=components["filename"],
-                Parameters=None
+                Parameters=None,
             )
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
@@ -190,12 +196,14 @@ class Logfile:
             components["filename"] = self.file_name
 
             # Determine SessionType based on the presence of criterion count/type
-            has_criterion = 'criterion count' in self.file_contents or 'criterion type' in self.file_contents
+            has_criterion = (
+                "criterion count" in self.file_contents or "criterion type" in self.file_contents
+            )
             session_type = "training" if has_criterion else "test"
 
             return ExperimentCB(
                 ExperimentID=None,  # ID is auto-generated or not needed for insertion
-                Cohort=None,        # This needs to be inserted from the external Cohort table
+                Cohort=None,  # This needs to be inserted from the external Cohort table
                 SubjectName=components["subject_name"],
                 SubjectNumber=None,  # This needs to be inserted from the external SubjectName, SubjectNumber table
                 SessionNumber=components["session_number"],
@@ -204,11 +212,10 @@ class Logfile:
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
                 LogFileName=components["filename"],
-                Parameters=None
+                Parameters=None,
             )
         else:
             raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
-
 
     def parse_parameters(self) -> Dict[str, Any]:
         """
@@ -244,7 +251,9 @@ class Logfile:
         comment_text = " ".join(comment[1] for comment in comments)
         return comment_text
 
-    def parse_trials_and_events(self) -> Tuple[Optional[List[Dict[str, Any]]], Optional[List[Dict[str, Any]]]]:
+    def parse_trials_and_events(
+        self,
+    ) -> Tuple[Optional[List[Dict[str, Any]]], Optional[List[Dict[str, Any]]]]:
         """
         Parse trials and events from RPE log files.
 
@@ -275,15 +284,16 @@ class Logfile:
             return None, None
         return trials, events
 
-
     def parse_direction(self, comments):
-            # Implement direction parsing logic here
-            pass
+        # Implement direction parsing logic here
+        pass
 
     def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, List]]:
         file_content_str = "".join(self.file_contents)
         direction = self.parse_direction(self.parse_comments())
-        trial_start_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
+        trial_start_pattern = (
+            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
+        )
         trial_start_match = re.search(trial_start_pattern, file_content_str)
 
         if not trial_start_match:
@@ -298,14 +308,31 @@ class Logfile:
         trials = []
         responses = []
         events = []
+        current_trial = None
+        trial_id = 0
+        response_id = 0
+        event_id = 0
 
         for event in event_matches:
-            event_datetime_str, event_desc, response_type, trial_number, trial_sub_type, criterion_type, _, response_time, _, _, criterion_count = event
+            (
+                event_datetime_str,
+                event_desc,
+                response_type,
+                trial_number,
+                trial_sub_type,
+                criterion_type,
+                _,
+                response_time,
+                _,
+                _,
+                criterion_count,
+            ) = event
             event_datetime = datetime.fromisoformat(event_datetime_str)
 
             if trial_number:
-                trial = TrialCB(
-                    TrialID=len(trials) + 1,
+                trial_id += 1
+                current_trial = TrialCB(
+                    TrialID=trial_id,
                     ExperimentID=experiment.ExperimentID,
                     TrialNumber=int(trial_number),
                     ResponseType=response_type,
@@ -315,52 +342,54 @@ class Logfile:
                     CriterionCount=float(criterion_count) if criterion_count else None,
                     TrialStartTime=event_datetime,
                     TrialEndTime=event_datetime,
-                    SessionType=experiment.SessionType
+                    SessionType=experiment.SessionType,
                 )
-                trials.append(trial)
+                trials.append(current_trial)
 
                 if response_type == "GO" and response_time:
-                    responses.append(ResponseCB(
-                        ResponseID=len(responses) + 1,
-                        TrialID=trial.TrialID,
-                        ResponseTime=float(response_time),
-                        EventDateTime=event_datetime
-                    ))
+                    response_id += 1
+                    responses.append(
+                        ResponseCB(
+                            ResponseID=response_id,
+                            TrialID=current_trial.TrialID,
+                            ResponseTime=float(response_time),
+                            EventDateTime=event_datetime,
+                        )
+                    )
 
-            events.append(EventCB(
-                EventID=len(events) + 1,
-                TrialID=trial.TrialID if trial_number else None,
-                EventType=event_desc,
-                EventTime=event_datetime,
-                ElapsedTime=(event_datetime - experiment_start_time).total_seconds()
-            ))
+            if current_trial:
+                event_id += 1
+                events.append(
+                    EventCB(
+                        EventID=event_id,
+                        TrialID=current_trial.TrialID,
+                        EventType=event_desc,
+                        EventTime=event_datetime,
+                        ElapsedTime=(event_datetime - experiment_start_time).total_seconds(),
+                    )
+                )
 
-            if trials:
-                trials[-1].TrialEndTime = event_datetime
+                current_trial.TrialEndTime = event_datetime
 
         if not trials:
             logger.error(f"{self.file_name} contains no data - exclude from analysis.")
             return None
 
-        return {
-            "experiment": experiment,
-            "trials": trials,
-            "responses": responses,
-            "events": events
-        }
-
+        return {"experiment": experiment, "trials": trials, "responses": responses, "events": events}
 
     def insert_record_to_database(self, con, record):
-        table_name = record.__class__.__name__.lower() + 's'  # Assumes table name is plural of the class name
-        columns = ', '.join(field.name for field in fields(record))
-        placeholders = ', '.join('?' for _ in fields(record))
+        table_name = (
+            record.__class__.__name__.lower() + "s"
+        )  # Assumes table name is plural of the class name
+        columns = ", ".join(field.name for field in fields(record))
+        placeholders = ", ".join("?" for _ in fields(record))
         values = []
         for field in fields(record):
             value = getattr(record, field.name)
             if isinstance(value, dict):  # Convert dict to JSON string
                 value = json.dumps(value)
             values.append(value)
-        query = f'INSERT INTO {table_name} ({columns}) VALUES ({placeholders})'
+        query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
         con.execute(query, tuple(values))
 
     def __str__(self):
@@ -371,7 +400,13 @@ class Logfile:
 
 
 class Logs:
-    def __init__(self, path: str, patterns: Optional[List[str]] = None, include: bool = True, logfile_ext: str = ".log") -> None:
+    def __init__(
+        self,
+        path: str,
+        patterns: Optional[List[str]] = None,
+        include: bool = True,
+        logfile_ext: str = ".log",
+    ) -> None:
         """
         Initialise Logs object.
 
@@ -549,7 +584,7 @@ class Logs:
         # Process included and excluded files
         # for file_list in (self.included_files, self.excluded_files):
         for file_name in file_list:
-            #try:
+            # try:
             # Parse the filename components
             experiment = Logfile(file_name, "").parse_filename_components_cog_bias()
             if experiment is not None:
@@ -562,7 +597,7 @@ class Logs:
                 # data['filename']
             else:
                 logger.info(f"Can't match {file_name}")
-            #except ValueError as e:
+                # except ValueError as e:
                 logger.info(f"Error processing file {file_name}: {e}")
 
         # Create a DataFrame from the collected data
@@ -612,8 +647,6 @@ class Logs:
                 )
                 display(df_)
         return pd.DataFrame(session_summary, columns=["Subject number", "Subject name", "Session count"])
-
-
 
     def __str__(self):
         return f"Logs: {len(self.logfiles)} log files in {self.path}"
