@@ -14,6 +14,16 @@ listing:
   categories: true
   sort-ui: false
   filter-ui: false
+  fields: [title, date, author, description, file-modified]
 ---
 
-TODO: Add a summary of the RPE and CB notebooks that are here.
+These are the notebooks that perform (for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments):
+
+1. A reconciliation of the the log files whose data will be loaded into the databases.
+2. The parsing of the log files into the respective databases (one for RPE and one for CB^ data)
+3. Sample queries for using the data in both DuckDB databases.
+4. Allowing for manual corrections to the CB data (in progress).
+
+^*This is a work in progress for the CB data.*
+
+----
