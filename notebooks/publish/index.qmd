@@ -14,7 +14,7 @@ listing:
   categories: true
   sort-ui: false
   filter-ui: false
-  fields: [title, date, author, description, file-modified]
+  fields: [title, date, author, description] #, file-modified]
 ---
 
 These are the notebooks that perform (for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments):
