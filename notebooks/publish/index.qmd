@@ -1,0 +1,19 @@
+---
+title: "RPE and CB data analysis notebooks"
+listing:
+  contents:
+    - logfile-reconciliation-RPE.ipynb
+    - logfile-to-database-RPE.ipynb
+    - logfile-reconciliation-CB.ipynb
+    - logfile-to-database-CB.ipynb
+    - database-queries-RPE.ipynb
+    - database-queries-CB.ipynb
+    - corrections-to-database-CB.ipynb
+  sort: false
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: false
+---
+
+TODO: Add a summary of the RPE and CB notebooks that are here.

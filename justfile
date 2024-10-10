@@ -3,10 +3,63 @@
 # Default output directory for PDF/HTML documents created from markdown
 default_output_dir := "docs/output"
 
+# Set the shell to bash
+set shell := ["bash", "-uc"]
+
+# Define the public repo URL
+PUBLIC_REPO := "https://github.com/DataBooth/horselogic-nb-publish.git"
+
 
 # List all just recipes
 default:
   @just --list
+
+# Define the main publishing recipe
+publish_to_public_repo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Render the Quarto project
+    cd notebooks/publish
+    cp ../*.ipynb .
+    quarto render
+    rm *.ipynb
+    cd ../..
+
+    # Clone the public repo (if not already done)
+    git clone {{PUBLIC_REPO}} public_repo
+
+    # Switch to the public repo directory
+    cd public_repo
+
+    # Create and switch to gh-pages branch (or switch if it already exists)
+    git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
+
+    # If the branch was newly created, you might want to set its upstream
+    git push --set-upstream origin gh-pages
+
+    # Remove existing files (except .git)
+    find . -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
+
+    # Copy rendered files from notebooks/publish/_site to public repo
+    cp -R ../notebooks/publish/_site/* .
+
+    # Add, commit, and push changes
+    git add .
+    git commit -m "Update published notebooks" || echo "No changes to commit"
+    git push origin gh-pages
+
+    # Clean up
+    cd ..
+    rm -rf public_repo
+
+render:
+    cd notebooks/publish && quarto render
+
+list-notebooks:
+    @echo "Available notebooks:"
+    @ls -1 notebooks/*.ipynb 2>/dev/null || echo "No notebooks found"
+
 
 # Export requirements.txt from pyproject.toml using PDM
 reqs:
