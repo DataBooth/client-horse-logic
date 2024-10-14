@@ -1,0 +1,36 @@
+erDiagram
+    Experiments {
+        int ExperimentID PK "Primary Key"
+        varchar SubjectName
+        int SessionNumber
+        varchar ExperimentType
+        text Comment
+        varchar StartDateTime
+        varchar LogFileName
+        varchar MeasurementFileName
+    }
+
+    Parameters {
+        int ParameterID PK "Primary Key"
+        int ExperimentID FK "Foreign Key"
+        varchar ParameterName
+        varchar ParameterValue
+    }
+
+    Trials {
+        int TrialID PK "Primary Key"
+        int ExperimentID FK "Foreign Key"
+        int TrialNumber
+        datetime StartToneDateTime
+    }
+
+    Events {
+        int EventID PK "Primary Key"
+        int TrialID FK "Foreign Key"
+        varchar EventType
+        datetime EventDateTime
+    }
+
+    Experiments ||--o{ Parameters : "has"
+    Experiments ||--o{ Trials : "has"
+    Trials ||--o{ Events : "has"

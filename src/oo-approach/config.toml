@@ -1,0 +1,8 @@
+TESTING_MODE = true
+DATA_DIR = "/Users/mjboothaus/code/github/databooth/horse-logic/data"
+GREEN_BUTTON_PIN = 17
+BLUE_BUTTON_PIN = 27
+RED_BUTTON_PIN = 22
+SERVO_CHANNEL = 0
+SENSITIVITY = 5
+TRIAL_LIMIT = 20

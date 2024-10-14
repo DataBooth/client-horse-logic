@@ -1,0 +1,17 @@
+# NOTE new= file paths- delete old paths
+
+systemIsReady = "/home/horselogic/Documents/test audio project_data/System_is_ready1.wav"
+sessionStarted = "/home/horselogic/Documents/test audio project_data/Session_started1.wav"
+trialPaused = "/home/horselogic/Documents/test audio project_data/Trial paused1.wav"
+trialRestarted = "/home/horselogic/Documents/test audio project_data/Trial restarted1.wav"
+sessionTerminated = "/home/horselogic/Documents/test audio project_data/End tone_1200_sess_completed.wav"
+startTone = "/home/horselogic/Documents/test audio project_data/Start tone _600.wav"
+correctTone = "/home/horselogic/Documents/test audio project_data/Correct tone_1000.wav"
+incorrectTone = "/home/horselogic/Documents/test audio project_data/IncorrectTone.wav"
+endTone = "/home/horselogic/Documents/test audio project_data/End tone_1200.wav"
+criterionAchieved = "/home/horselogic/Documents/test audio project_data/Criterion_reached.wav"
+criterionNotReached = "/home/horselogic/Documents/test audio project_data/Criterion_ not_reached.wav"
+acquisitionSessionStarted = "/home/horselogic/Documents/test audio project_data/Acquistion_Session_Started.wav"
+habitSessionStarted = "/home/horselogic/Documents/test audio project_data/Habit_session_started.wav"
+extinctionSessionStarted = "/home/horselogic/Documents/test audio project_data/Extinction_session_started.wav"
+reinstatementSessionStarted = "/home/horselogic/Documents/test audio project_data/Reinstatement_session_started.wav"
