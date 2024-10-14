@@ -4,11 +4,11 @@ listing:
   contents:
     - logfile-reconciliation-RPE.ipynb
     - logfile-to-database-RPE.ipynb
-    # - logfile-reconciliation-CB.ipynb
-    # - logfile-to-database-CB.ipynb
-    # - database-queries-RPE.ipynb
-    # - database-queries-CB.ipynb
-    # - corrections-to-database-CB.ipynb
+    - logfile-reconciliation-CB.ipynb
+    - logfile-to-database-CB.ipynb
+    - database-queries-RPE.ipynb
+    - database-queries-CB.ipynb
+    - corrections-to-database-CB.ipynb
   sort: false
   type: default
   categories: true

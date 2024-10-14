@@ -48,6 +48,13 @@ class Project:
         if self._db_connection is None:
             self.setup_database()
         return self._db_connection
+    
+    def get_database_path(self):
+        if self._db_name is None:
+            return None
+        if self._db_name == "":
+            return ":memory:"  # For in-memory database
+        return Path(self._db_name).resolve()
 
     @contextmanager
     def db_connection(self):

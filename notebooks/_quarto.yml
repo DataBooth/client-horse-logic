@@ -2,6 +2,16 @@ project:
   type: website
   output-dir: _site
   # See .quartoignore for ignored files
+  render:
+    - "*.qmd"
+    - "*.ipynb"
+    - "!ignored.qmd"
+    - "!ignored-dir/"
+    - "!upload-to-motherduck.ipynb"
+    - "!OCR-tests/"
+    - "!archive-analysis/"
+    - "!archive-experiment/"
+    - "!background/"
 
 website:
   navbar:
