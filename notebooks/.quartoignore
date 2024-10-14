@@ -1,0 +1,5 @@
+upload-to-motherduck.ipynb
+OCR-tests/*.ipynb
+archive-analysis/*.ipynb
+archive-experiment/*.ipynb
+background/*.ipynb

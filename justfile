@@ -14,7 +14,25 @@ PUBLIC_REPO := "https://github.com/DataBooth/horselogic-nb-publish.git"
 default:
   @just --list
 
-# Define the main publishing recipe
+
+# Export requirements.txt from pyproject.toml using PDM
+reqs:
+    pdm export --o requirements.txt --without-hashes --prod
+
+qproject project_name="notebooks":
+    quarto create-project {{project_name}} --type website && cd {{project_name}}
+
+qrender project_name="notebooks":
+    quarto render {{project_name}}
+
+qpreview project_name="notebooks":
+    quarto preview {{project_name}}
+
+qpublish location="gh-pages" project_name="notebooks":
+    quarto publish --no-prompt {{location}} {{project_name}}
+
+
+# Define the main publishing recipe (I think quarto publish is effectively this recipe)
 publish_to_public_repo:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -61,9 +79,6 @@ list-notebooks:
     @ls -1 notebooks/*.ipynb 2>/dev/null || echo "No notebooks found"
 
 
-# Export requirements.txt from pyproject.toml using PDM
-reqs:
-    pdm export --o requirements.txt --without-hashes --prod
 
 # Execute and render a Quarto notebook (to .html)
 quarto notebook="notebooks/logfile-reconciliation-RPE.ipynb" quarto_render_dir="quarto_output":

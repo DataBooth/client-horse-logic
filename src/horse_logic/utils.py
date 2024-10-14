@@ -1,5 +1,6 @@
 import inspect
 import sys
+from pathlib import Path
 
 import duckdb
 import pandas as pd
@@ -51,6 +52,7 @@ def export_data_to_csv(
     """
     df.to_csv(filepath, header=header)
     logger.info(f"{len(df)} rows - {info_message}: {filepath}")
+    create_markdown_link(filepath)
 
 
 def create_tables_from_sql_file(
@@ -72,3 +74,47 @@ def create_tables_from_sql_file(
     if echo_sql:
         display(Markdown(f"\n```\n{sql_commands}\n```"))
     con.execute(sql_commands)
+
+
+def create_markdown_link(file_path, link_text=None):
+    """
+    Creates a Markdown link for a given file path that works in both
+    Jupyter notebooks and when rendered to HTML by Quarto.
+
+    Parameters:
+    - file_path (str or Path): The path to the file, relative to the notebooks directory.
+    - link_text (str, optional): The text to display for the link.
+
+    Returns:
+    - tuple: (markdown_link, debug_info)
+    """
+    # Convert to Path object if it's a string
+    file_path = Path(file_path)
+
+    relative_path = Path(file_path).relative_to(Path.cwd())
+    
+    # Resolve the full path of the target file
+    full_path = (Path.cwd() / file_path).resolve()
+    
+    # Check if the file exists
+    if not full_path.exists():
+        raise FileNotFoundError(f"The file {full_path} does not exist.")
+    
+    # Use the file name as link_text if not provided
+    if link_text is None:
+        # link_text = file_path.name
+        link_text = str(relative_path)
+
+    # Create Markdown link
+    markdown_link = f"[{link_text}]({relative_path})"
+
+    # Debug information
+    debug_info = {
+        "current_dir": str(Path.cwd()),
+        "full_path": str(full_path),
+        "relative_path": str(file_path),
+        "file_path_input": str(file_path)
+    }
+
+    display(Markdown(markdown_link))
+    return markdown_link, debug_info
