@@ -28,6 +28,7 @@ notebooks/*_files
 *.html
 *.xlsx
 tmp.txt
+notebooks/public_repo/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
