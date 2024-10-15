@@ -11,9 +11,7 @@ project:
     - "!OCR-tests/"
     - "!archive-analysis/"
     - "!archive-experiment/"
-    - "!background/"
-    - "!database*CB.ipynb"
- 
+    - "!background/" 
 
 website:
   navbar:

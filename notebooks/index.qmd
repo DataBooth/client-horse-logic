@@ -4,18 +4,18 @@ listing:
   contents:
     - logfile-reconciliation-RPE.ipynb
     - logfile-to-database-RPE.ipynb
+    - database-queries-RPE.ipynb
     - logfile-reconciliation-CB.ipynb
     - logfile-to-database-CB.ipynb
-    - database-queries-RPE.ipynb
     - database-queries-CB.ipynb
     - corrections-to-database-CB.ipynb
+  
   sort: false
   type: default
   categories: true
   sort-ui: false
   filter-ui: false
   fields: [title, date, author, description, filename] # , categories]
-  # template: custom-listing.ejs
 ---
 
 These are the notebooks that perform (for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments):
