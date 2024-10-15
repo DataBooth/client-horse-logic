@@ -4,6 +4,7 @@ from pathlib import Path
 
 import duckdb
 import itables.options as opt
+import pandas as pd
 import yaml
 from IPython.display import Markdown, display
 from itables import init_notebook_mode
@@ -11,7 +12,7 @@ from loguru import logger
 
 
 class Project:
-    def __init__(self, config_file='project_config.yaml', experiment_type=None, table_page_length=10):
+    def __init__(self, config_file='project_config.yaml', experiment_type=None, table_page_length=10, delete_existing_db=True):
         self.project_dir = self._find_project_root()
         self.config = self.load_config(config_file)
         self.experiment_type = experiment_type
@@ -19,7 +20,7 @@ class Project:
         self._initialise_logger()
         self._initialise_itables(table_page_length)
         self._initialise_directories()
-        self._initialise_database()
+        self._initialise_database(delete_existing_db)
         logger.info(f"Project initialised ({experiment_type}): config defined in {config_file}")
 
     def _find_project_root(self):
@@ -63,23 +64,30 @@ class Project:
         logger.info(f"{name.capitalize()} directory: {full_path}")
         logger.info(f"{name.capitalize()} directory purpose: {info['purpose']}")
 
-    def _initialise_database(self):
+    def _initialise_database(self, delete_existing_db=True):
         db_config = self.config['database']
         db_path = self.project_dir / db_config['path'].format(experiment_type=self.experiment_type)
         self.DB_FILE_PATH = db_path
+        
+        if delete_existing_db and db_path.exists():
+            db_path.unlink()
+            logger.info(f"Existing database file deleted: {db_path}")
+        
         logger.info(f"Database file path: {db_path}")
         logger.info(f"Database purpose: {db_config['purpose']}")
-        self.setup_database(str(db_path))
 
-    def setup_database(self, db_path):
-        self._db_connection = duckdb.connect(db_path)
-        logger.info(f"Connected to database: {db_path}")
+    def setup_database(self):
+        if self._db_connection is None:
+            self._db_connection = duckdb.connect(str(self.DB_FILE_PATH))
+            logger.info(f"Connected to database: {self.DB_FILE_PATH}")
+        else:
+            logger.info("Database connection already exists")
 
     def get_db_connection(self):
         if self._db_connection is None:
-            self.setup_database(str(self.DB_FILE_PATH))
+            self.setup_database()
         return self._db_connection
-
+    
     @contextmanager
     def db_connection(self):
         conn = self.get_db_connection()
@@ -182,6 +190,52 @@ class Project:
         display(Markdown(markdown_link))
         #logger.debug(f"Markdown link debug info: {debug_info}")
         return markdown_link, debug_info
+    
+    def export_database_tables(self, output_subdir, output_format="xlsx"):
+            output_dir = self.output_dir / output_subdir
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            con = self.get_db_connection()
+            
+            try:
+                tables = con.sql("SHOW TABLES;").fetchall()
+
+                if output_format == "xlsx":
+                    # Write to one Excel file by sheet name
+                    excel_path = output_dir / "all_tables.xlsx"
+                    with pd.ExcelWriter(excel_path) as writer:
+                        for table in tables:
+                            table_name = table[0]
+                            # Query the table and convert it to a pandas DataFrame
+                            df = con.table(table_name).to_df()
+                            df.to_excel(writer, sheet_name=table_name, index=False)
+                    logger.info(f"Exported database tables to: {excel_path}")
+                    self.create_markdown_link(excel_path)
+
+                elif output_format in ["csv", "parquet"]:
+                    for table in tables:
+                        table_name = table[0]
+                        # Query the table and convert it to a pandas DataFrame
+                        df = con.table(table_name).to_df()
+
+                        if output_format == "csv":
+                            # Write to a CSV file
+                            csv_path = output_dir / f"{table_name}.csv"
+                            df.to_csv(csv_path, index=False)
+                            logger.info(f"Exported database table to: {csv_path}")
+                            self.create_markdown_link(csv_path)
+                        elif output_format == "parquet":
+                            # Write to a Parquet file
+                            parquet_path = output_dir / f"{table_name}.parquet"
+                            df.to_parquet(parquet_path, index=False)
+                            logger.info(f"Exported database table to: {parquet_path}")
+                            self.create_markdown_link(parquet_path)
+
+                else:
+                    raise ValueError(f"Unsupported output format: {output_format}")
+            except Exception as e:
+                logger.error(f"Error exporting database tables: {e}")
+
 
 # Usage example
 # if __name__ == "__main__":
