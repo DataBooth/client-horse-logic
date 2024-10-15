@@ -1,0 +1,28 @@
+project_dir: "."  # Current directory, or specify an absolute path
+
+directories:
+  data:
+    path: data
+    purpose: "Parent directory for raw and processed data"
+
+  sql:
+    path: sql
+    purpose: "Store SQL scripts"
+
+  output:
+    path: "data/results/{experiment_type}"
+    purpose: "Store output files and results by experiment type"
+
+  logfiles:
+    path:
+      RPE: "data/results/zips/data_17Jan2020_email_hillydale_equine"
+      CB: "data/results/zips/cb_data"
+    purpose: "Store for the raw log files"
+
+  notebooks:
+    path: notebooks
+    purpose: "Jupyter notebooks for performing analysis"
+
+database:
+  path: "data/Experiments_{experiment_type}_2023_Q4.ddb"
+  purpose: "Main project databases (outputs) by experiment type"
