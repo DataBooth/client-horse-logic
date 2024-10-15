@@ -3,26 +3,25 @@ from pathlib import Path
 from loguru import logger
 from IPython.display import display, Markdown
 
+
 class Subject:
     def __init__(self, project):
         self.project_dir = project.get_project_dir()
-        self.config = project.get_config()['subject']
+        self.config = project.get_config()["subject"]
 
     def get_subject_info(self):
-        cohort_data_path = self.project_dir / Path(self.config['cohort_data']['path'])
+        cohort_data_path = self.project_dir / Path(self.config["cohort_data"]["path"])
 
         if cohort_data_path.exists():
             subject_df = pd.read_excel(cohort_data_path)
             logger.info(f"Loaded subject info from: {cohort_data_path}")
 
-            subject_df.rename(
-                {"No": "subject_number", "Horse": "subject_name"}, axis=1, inplace=True
-            )
+            subject_df.rename({"No": "subject_number", "Horse": "subject_name"}, axis=1, inplace=True)
             subject_df["subject_name"] = subject_df["subject_name"].str.lower()
-            
+
             sorted_subjects = sorted(subject_df["subject_name"].to_list())
             subject_list = self._format_subject_list(sorted_subjects)
-            
+
             logger.info(f"Subject count: {len(sorted_subjects)}")
             logger.info(f"Sorted subject names:\n{subject_list}")
 
@@ -54,6 +53,8 @@ class Subject:
                 logger.info(f"Subject {subject_name}: No experiments conducted")
             else:
                 df_.loc[:, "time_dff"] = df_["datetime"].diff()
-                display(Markdown(f"### {n_subject+1}. {subject_name.capitalize()}: {n_session} session(s)"))
+                display(
+                    Markdown(f"### {n_subject+1}. {subject_name.capitalize()}: {n_session} session(s)")
+                )
                 display(df_)
         return pd.DataFrame(session_summary, columns=["Subject number", "Subject name", "Session count"])

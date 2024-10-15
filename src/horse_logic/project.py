@@ -1,4 +1,5 @@
 import sys
+import urllib.parse
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -6,9 +7,12 @@ import duckdb
 import itables.options as opt
 import pandas as pd
 import yaml
-from IPython.display import Markdown, display
+from IPython.display import HTML, Markdown, display
 from itables import init_notebook_mode
 from loguru import logger
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import get_lexer_for_filename
 
 
 class Project:
@@ -144,51 +148,52 @@ class Project:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
     def create_markdown_link(self, file_path, link_text=None):
-        file_path = Path(file_path)
-        project_root = self.get_project_dir()
+        file_path = Path(file_path).resolve()  # Get the absolute path
+        project_root = self.project_dir.resolve()
         notebooks_dir = project_root / 'notebooks'
-        cwd = Path.cwd()
+        cwd = Path.cwd().resolve()
 
-        # Check if the current working directory is within the notebooks directory
-        if notebooks_dir in cwd.parents or cwd == notebooks_dir:
-            # If so, make the link relative to the notebooks directory
+        # Try to make the path relative to notebooks, project root, or cwd
+        for base_path in [notebooks_dir, project_root, cwd]:
             try:
-                link_path = file_path.relative_to(notebooks_dir)
+                link_path = file_path.relative_to(base_path)
+                break
             except ValueError:
-                # If the file is not within the notebooks directory, fall back to project root
-                link_path = file_path.relative_to(project_root)
+                continue
         else:
-            # If not in notebooks directory, make the link relative to the project root
-            link_path = file_path.relative_to(project_root)
+            # If we can't make it relative, use the absolute path
+            link_path = file_path
 
-        # For display, always make the path relative to the current working directory
+        if not file_path.exists():
+            raise FileNotFoundError(f"The file {file_path} does not exist.")
+        
+        # For display, always make the path relative to the current working directory if possible
         try:
             display_path = file_path.relative_to(cwd)
         except ValueError:
             display_path = file_path
 
-        full_path = file_path.resolve()
-        
-        if not full_path.exists():
-            raise FileNotFoundError(f"The file {full_path} does not exist.")
-        
         if link_text is None:
             link_text = str(display_path)
 
-        markdown_link = f"[{link_text}]({link_path})"
+        # Encode the link path to handle spaces and special characters
+        encoded_link_path = urllib.parse.quote(str(link_path))
+
+        markdown_link = f"[{link_text}]({encoded_link_path})"
 
         debug_info = {
             "current_dir": str(cwd),
             "project_root": str(project_root),
             "notebooks_dir": str(notebooks_dir),
-            "full_path": str(full_path),
+            "full_path": str(file_path),
             "link_path": str(link_path),
+            "encoded_link_path": encoded_link_path,
             "display_path": str(display_path),
             "file_path_input": str(file_path)
         }
 
         display(Markdown(markdown_link))
-        #logger.debug(f"Markdown link debug info: {debug_info}")
+        #print(f"Debug info: {debug_info}")  # Use print for debug info
         return markdown_link, debug_info
     
     def export_database_tables(self, output_subdir, output_format="xlsx"):
@@ -236,6 +241,16 @@ class Project:
             except Exception as e:
                 logger.error(f"Error exporting database tables: {e}")
 
+
+
+    def display_file_with_highlighting(self, relative_path):
+        full_path = self.project_dir / relative_path
+        with open(full_path, 'r') as file:
+            content = file.read()
+        lexer = get_lexer_for_filename(full_path)
+        formatter = HtmlFormatter(style='friendly')
+        highlighted = highlight(content, lexer, formatter)
+        display(HTML(f'<style>{formatter.get_style_defs()}</style>{highlighted}'))
 
 # Usage example
 # if __name__ == "__main__":

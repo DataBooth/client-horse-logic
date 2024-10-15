@@ -12,8 +12,8 @@ project:
     - "!archive-analysis/"
     - "!archive-experiment/"
     - "!background/"
-    - "!*CB.ipynb"
-    - "logfile-reconciliation-CB.ipynb"
+    - "!database*CB.ipynb"
+ 
 
 website:
   navbar:
