@@ -32,32 +32,41 @@ qpublish location="gh-pages" project_name="notebooks":
     quarto publish --no-prompt {{location}} {{project_name}}
 
 
-# Define the main publishing recipe (I think quarto publish is effectively this recipe)
+# Define the main publishing recipe (I think quarto publish is effectively this recipe - although not to public_repo)
 publish_to_public_repo:
     #!/usr/bin/env bash
     set -euo pipefail
 
+    # Store the original directory
+    ORIGINAL_DIR=$(pwd)
+
     # Render the Quarto project
     cd notebooks
     quarto render
+    cd "$ORIGINAL_DIR"
 
-    # Clone the public repo (if not already done)
-    git clone {{PUBLIC_REPO}} public_repo
-
-    # Switch to the public repo directory
-    cd public_repo
-
-    # Create and switch to gh-pages branch (or switch if it already exists)
-    git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
-
-    # If the branch was newly created, you might want to set its upstream
-    git push --set-upstream origin gh-pages
+    # Check if public_repo directory exists
+    if [ -d "public_repo" ]; then
+        echo "public_repo directory exists. Updating..."
+        cd public_repo
+        git fetch origin
+        git checkout gh-pages
+        git pull origin gh-pages
+    else
+        echo "Cloning public repo..."
+        git clone {{PUBLIC_REPO}} public_repo
+        cd public_repo
+        # Create and switch to gh-pages branch (or switch if it already exists)
+        git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
+        # If the branch was newly created, you might want to set its upstream
+        git push --set-upstream origin gh-pages
+    fi
 
     # Remove existing files (except .git)
     find . -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
 
-    # Copy rendered files from notebooks/publish/_site to public repo
-    cp -R ../notebooks/_site/* .
+    # Copy rendered files from notebooks/_site to public repo
+    cp -R "$ORIGINAL_DIR/notebooks/_site/"* .
 
     # Add, commit, and push changes
     git add .
@@ -65,11 +74,12 @@ publish_to_public_repo:
     git push origin gh-pages
 
     # Clean up
-    cd ..
+    cd "$ORIGINAL_DIR"
     rm -rf public_repo
+    
 
 render:
-    cd notebooks/publish && quarto render
+    cd notebooks && quarto render
 
 list-notebooks:
     @echo "Available notebooks:"
