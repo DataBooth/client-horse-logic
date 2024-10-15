@@ -38,11 +38,8 @@ publish_to_public_repo:
     set -euo pipefail
 
     # Render the Quarto project
-    cd notebooks/publish
-    cp ../*.ipynb .
+    cd notebooks
     quarto render
-    rm *.ipynb
-    cd ../..
 
     # Clone the public repo (if not already done)
     git clone {{PUBLIC_REPO}} public_repo
@@ -60,7 +57,7 @@ publish_to_public_repo:
     find . -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
 
     # Copy rendered files from notebooks/publish/_site to public repo
-    cp -R ../notebooks/publish/_site/* .
+    cp -R ../notebooks/_site/* .
 
     # Add, commit, and push changes
     git add .

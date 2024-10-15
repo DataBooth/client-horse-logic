@@ -10,7 +10,9 @@ directories:
     purpose: "Store SQL scripts"
 
   output:
-    path: "data/results/{experiment_type}"
+    path:
+      RPE: "notebooks/results/RPE"
+      CB: "notebooks/results/CB"
     purpose: "Store output files and results by experiment type"
 
   logfiles:
@@ -26,3 +28,8 @@ directories:
 database:
   path: "data/Experiments_{experiment_type}_2023_Q4.ddb"
   purpose: "Main project databases (outputs) by experiment type"
+
+subject:
+  cohort_data:
+    path: "docs/from_CH/Cohort data for MB.xlsx"
+    purpose: "Excel file containing subject information provided by CH"

@@ -1,60 +1,84 @@
-import duckdb
-import pandas as pd
-from pathlib import Path
-from contextlib import contextmanager
-from IPython.display import display, Markdown
 import sys
-from loguru import logger
+from contextlib import contextmanager
+from pathlib import Path
+
+import duckdb
 import itables.options as opt
+import yaml
+from IPython.display import Markdown, display
 from itables import init_notebook_mode
+from loguru import logger
+
 
 class Project:
-    def __init__(self, project_root=None, experiment_type=None, table_page_length=10):
-        self._root = project_root or self.find_project_root()
+    def __init__(self, config_file='project_config.yaml', experiment_type=None, table_page_length=10):
+        self.project_dir = self._find_project_root()
+        self.config = self.load_config(config_file)
         self.experiment_type = experiment_type
-        logger.info(f"Experiment type: {self.experiment_type}")
         self._db_connection = None
-        self._db_name = None
-        self._initialize_logger()
-        self._initialize_itables(table_page_length)
-        logger.info(f"Table page length set to: {table_page_length}")
+        self._initialise_logger()
+        self._initialise_itables(table_page_length)
+        self._initialise_directories()
+        self._initialise_database()
+        logger.info(f"Project initialised ({experiment_type}): config defined in {config_file}")
 
-    def _initialize_logger(self, format="<level>{level: <8}</level> | <level>{message}</level>"):
+    def _find_project_root(self):
+        current_dir = Path.cwd()
+        while current_dir.name != 'notebooks':
+            if (current_dir / 'project_config.yaml').exists():
+                return current_dir
+            current_dir = current_dir.parent
+        return current_dir.parent  # Return the parent of 'notebooks'
+
+    def load_config(self, config_file):
+        config_path = self.project_dir / config_file
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
+
+    def _initialise_logger(self):
         logger.remove()  # Remove default handler
-        logger.add(sys.stderr, format=format)
+        logger.add(sys.stderr, format="<level>{level: <8}</level> | <level>{message}</level>")
 
-    def _initialize_itables(self, table_page_length=10):
+    def _initialise_itables(self, table_page_length=10):
         init_notebook_mode(all_interactive=True, connected=False)
         opt.pageLength = table_page_length
 
-    def setup_database(self, db_name=None):
-        if db_name is None and self.experiment_type:
-            data_dir = self._root / "data"
-            db_name = data_dir / f"Experiments_{self.experiment_type}_2023_Q4.ddb"
-        
-        if db_name:
-            self._db_name = str(db_name)
+    def _initialise_directories(self):
+        for name, info in self.config['directories'].items():
+            self.initialise_dir(name, info)
+
+    def initialise_dir(self, name, info):
+        if isinstance(info['path'], dict):
+            # If path is a dict, assume it contains experiment-specific paths
+            if self.experiment_type not in info['path']:
+                raise ValueError(f"No path defined for experiment type '{self.experiment_type}' in directory '{name}'")
+            path = info['path'][self.experiment_type]
         else:
-            self._db_name = ""  # In-memory database
-        
-        # Close existing connection if any
-        self.close_db_connection()
-        
-        # Create new connection
-        self._db_connection = duckdb.connect(self._db_name)
-        logger.info(f"Connected to database: {self._db_name}")
+            # If path is a string, use it directly
+            path = info['path']
+
+        full_path = self.project_dir / path
+        setattr(self, f"{name}_dir", full_path)
+        full_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"{name.capitalize()} directory: {full_path}")
+        logger.info(f"{name.capitalize()} directory purpose: {info['purpose']}")
+
+    def _initialise_database(self):
+        db_config = self.config['database']
+        db_path = self.project_dir / db_config['path'].format(experiment_type=self.experiment_type)
+        self.DB_FILE_PATH = db_path
+        logger.info(f"Database file path: {db_path}")
+        logger.info(f"Database purpose: {db_config['purpose']}")
+        self.setup_database(str(db_path))
+
+    def setup_database(self, db_path):
+        self._db_connection = duckdb.connect(db_path)
+        logger.info(f"Connected to database: {db_path}")
 
     def get_db_connection(self):
         if self._db_connection is None:
-            self.setup_database()
+            self.setup_database(str(self.DB_FILE_PATH))
         return self._db_connection
-    
-    def get_database_path(self):
-        if self._db_name is None:
-            return None
-        if self._db_name == "":
-            return ":memory:"  # For in-memory database
-        return Path(self._db_name).resolve()
 
     @contextmanager
     def db_connection(self):
@@ -62,7 +86,7 @@ class Project:
         try:
             yield conn
         finally:
-            conn.commit()  # Commit changes but don't close the connection
+            conn.commit()
 
     def create_tables_from_sql_file(self, sql_file):
         conn = self.get_db_connection()
@@ -81,26 +105,13 @@ class Project:
     def __del__(self):
         self.close_db_connection()
 
-    def get_root_dir(self):
-        return self._root
+    def get_project_dir(self):
+        return self.project_dir
 
-    def find_project_root(self, marker="pyproject.toml"):
-        path = Path.cwd().resolve()
-        while path != path.parent:
-            if (path / marker).exists():
-                return path
-            path = path.parent
-        raise FileNotFoundError(f"Could not find project root with marker: {marker}")
+    def get_config(self):
+        return self.config
 
-    @property
-    def data_dir(self):
-        return self._root / "data"
-
-    @property
-    def sql_dir(self):
-        return self._root / "sql"
-
-    def export_data_to_csv(self, df: pd.DataFrame, filepath: str, info_message: str = None, header: list = None, log_relative_path: bool = True):
+    def export_data_to_csv(self, df, filepath, info_message=None, header=None, log_relative_path=True):
         filepath = Path(filepath)
         df.to_csv(filepath, header=header)
         
@@ -124,43 +135,45 @@ class Project:
         else:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
-    def create_markdown_link(self, file_path, link_text=None, working_dir="notebooks"):
-        file_path = Path(file_path).resolve()
-        project_root = self.get_root_dir()
-        working_dir_path = project_root / working_dir
+    def create_markdown_link(self, file_path, link_text=None):
+        file_path = Path(file_path)
+        project_root = self.get_project_dir()
+        notebooks_dir = project_root / 'notebooks'
+        cwd = Path.cwd()
 
-        # Ensure the file exists
-        if not file_path.exists():
-            raise FileNotFoundError(f"The file {file_path} does not exist.")
-
-        # Calculate the link path relative to the working directory
-        try:
-            link_path = file_path.relative_to(working_dir_path)
-        except ValueError:
-            # If the file is not under the working directory, 
-            # calculate the path relative to the project root
+        # Check if the current working directory is within the notebooks directory
+        if notebooks_dir in cwd.parents or cwd == notebooks_dir:
+            # If so, make the link relative to the notebooks directory
             try:
-                link_path = file_path.relative_to(project_root)
+                link_path = file_path.relative_to(notebooks_dir)
             except ValueError:
-                # If it's not under the project root, use the absolute path
-                link_path = file_path
+                # If the file is not within the notebooks directory, fall back to project root
+                link_path = file_path.relative_to(project_root)
+        else:
+            # If not in notebooks directory, make the link relative to the project root
+            link_path = file_path.relative_to(project_root)
 
-        # Calculate the display path relative to the current working directory
+        # For display, always make the path relative to the current working directory
         try:
-            display_path = file_path.relative_to(Path.cwd())
+            display_path = file_path.relative_to(cwd)
         except ValueError:
             display_path = file_path
 
+        full_path = file_path.resolve()
+        
+        if not full_path.exists():
+            raise FileNotFoundError(f"The file {full_path} does not exist.")
+        
         if link_text is None:
             link_text = str(display_path)
 
         markdown_link = f"[{link_text}]({link_path})"
 
         debug_info = {
-            "current_dir": str(Path.cwd()),
+            "current_dir": str(cwd),
             "project_root": str(project_root),
-            "working_dir": str(working_dir_path),
-            "full_path": str(file_path),
+            "notebooks_dir": str(notebooks_dir),
+            "full_path": str(full_path),
             "link_path": str(link_path),
             "display_path": str(display_path),
             "file_path_input": str(file_path)
@@ -170,88 +183,10 @@ class Project:
         #logger.debug(f"Markdown link debug info: {debug_info}")
         return markdown_link, debug_info
 
-    def display_sessions_by_subject(self, df_summary, subject_df):
-        session_summary = []
-        for n_subject, subject_name in enumerate(subject_df["subject_name"]):
-            df_ = df_summary.drop(columns=["suffix", "subject_name"])[
-                df_summary["subject_name"] == subject_name
-            ]
-            n_session = len(df_)
-            session_summary.append((n_subject + 1, subject_name.capitalize(), n_session))
-            if n_session == 0:
-                logger.info(f"Subject {subject_name}: No experiments conducted")
-            else:
-                df_.loc[:, "time_dff"] = df_["datetime"].diff()
-                display(Markdown(f"### {n_subject+1}. {subject_name.capitalize()}: {n_session} session(s)"))
-                display(df_)
-        return pd.DataFrame(session_summary, columns=["Subject number", "Subject name", "Session count"])
-
-
-    def get_subject_info(self):
-        HORSE_ORDER_XLSX = "Cohort data for MB.xlsx"
-        HORSE_ORDER_PATH = self._root / "docs" / "from_CH"
-        HORSE_ORDER_FILEPATH = HORSE_ORDER_PATH / HORSE_ORDER_XLSX
-
-        if HORSE_ORDER_FILEPATH.exists():
-            subject_df = pd.read_excel(HORSE_ORDER_FILEPATH)
-            logger.info(f"Loaded horse order info from: {HORSE_ORDER_FILEPATH}")
-
-            subject_df.rename(
-                {"No": "subject_number", "Horse": "subject_name"}, axis=1, inplace=True
-            )  # Rename columns
-            
-            # Ensure lower case subject names for later lookup
-            subject_df["subject_name"] = subject_df["subject_name"].str.lower()
-            
-            # Create and log the sorted subject list
-            sorted_subjects = sorted(subject_df["subject_name"].to_list())
-            subject_list = self._format_subject_list(sorted_subjects)
-            
-            logger.info(f"Subject count: {len(sorted_subjects)}")
-            logger.info(f"Sorted subject names:\n{subject_list}")
-
-            return subject_df
-        else:
-            logger.error(f"Horse order info not found: {HORSE_ORDER_FILEPATH}")
-            return None
-
-    def _format_subject_list(self, subjects, width=100, indent="\t"):
-        formatted_list = indent
-        line_length = len(indent)
-        for subject in subjects:
-            if line_length + len(subject) + 2 > width:  # +2 for ", "
-                formatted_list += "\n" + indent
-                line_length = len(indent)
-            formatted_list += subject + ", "
-            line_length += len(subject) + 2
-        return formatted_list.rstrip(", ")  # Remove trailing comma and space
-
-
 # Usage example
 # if __name__ == "__main__":
-#     # Initialise the project
 #     project = Project(experiment_type="RPE", table_page_length=20)
-
-#     # Get directories
-#     PROJECT_DIR = project.get_root_dir()
-#     DATA_DIR = project.data_dir
-#     SQL_DIR = project.sql_dir
-
-#     # Setup the database
-#     project.setup_database()  # This will use the default database name based on the experiment type
-
-#     # Create tables
-#     project.create_tables_from_sql_file("create_experiment_tables_ddb.sql")
-
-  # Get subject info
-    # subject_df = project.get_subject_info()
-
-#     # Export some data
-#     df = pd.DataFrame({'A': [1, 2, 3], 'B': ['a', 'b', 'c']})
-#     project.export_data_to_csv(df, DATA_DIR / "sample_data.csv", "Sample data export")
-
-#     # Create a markdown link
-#     project.create_markdown_link(DATA_DIR / "sample_data.csv", "Link to sample data")
-
-#     # Close the database connection when done
-#     project.close_db_connection()
+#     print(project.get_project_dir())
+#     print(project.data_dir)
+#     print(project.sql_dir)
+#     print(project.DB_FILE_PATH)

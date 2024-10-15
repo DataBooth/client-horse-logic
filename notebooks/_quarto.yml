@@ -12,6 +12,8 @@ project:
     - "!archive-analysis/"
     - "!archive-experiment/"
     - "!background/"
+    - "!*CB.ipynb"
+    - "!database-queries-RPE.ipynb"
 
 website:
   navbar:
