@@ -5,12 +5,80 @@ format: html
 
 # About This Repository
 
-TODO
+This repository is designed and built by Michael Booth of [DataBooth] in colloboration with the research lead [Cathrynne Henshall](mailto:ponies@hillydale.com.au).
 
 ## Purpose
 
-The primary goal of this repository is to ...
+The provided notebooks and supporting code are part of a data analysis pipeline for horse behavioral experiments. The primary goal is to process and analyse log files generated during these experiments, for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments. 
 
 ## Features
 
-TODO.
+Each of the notebooks uses some (or all) of the following custom classes to assist with the analysis:
+
+### Project Class
+
+The Project class is like a central organiser for your research project. It helps you keep everything tidy and in the right place. Here's what it does:
+
+1. Sets up your project's structure: It creates folders for your data, results, and other important files.
+2. Manages your database: It sets up and maintains a database (by experiment type i.e. RPE or CB) where you can store all your experimental data.
+3. Keeps track of important information: It remembers things like what type of experiment you're running and where all your files are located.
+4. Provides useful tools: It offers methods to help you do common tasks, like creating links to your files or exporting data.
+
+Think of the Project class as your personal assistant for your research project. It helps you stay organised and provides you with the tools you need to manage your experiments efficiently.
+
+### Subject Class
+
+The Subject class represents an individual participant in your experiment - in this case, a horse. It's like a digital profile for each horse in your study. Here's what it does:
+
+1. Stores information about the horse: It keeps track of details like the horse's name, cohort, and any other relevant characteristics.
+2. Manages experimental data: It helps you organise and access the data collected for each horse during the experiments.
+3. Provides easy access to subject-specific information: It allows you to quickly retrieve information about a particular horse.
+
+Think of the Subject class as a digital folder for each horse in your study. It keeps all the information about that horse in one place, making it easy for you to access and manage data for individual subjects.
+
+Together, these classes help you organise your research project, manage your data efficiently, and keep track of information about each participant in your study. They're designed to make your research process smoother and more organised.
+
+### Logfile Classes
+
+1. Logfile Class:
+This is like a digital version of a physical log file. It can:
+- Read and store the contents of a log file
+- Parse the filename to extract important information
+- Interpret the contents of the file to create Experiment, Trial, and Event objects (for both RPE and CB experiments)
+
+2. Logs Class:
+This is like a file cabinet for all your log files. It can:
+- Find all the log files in a specific folder
+- Load them into Logfile objects
+- Keep track of which files are included or excluded from analysis
+
+### Experimental Classes
+
+1. Experiment and ExperimentCB Classes:
+These are like digital record cards for each experiment. They store important information about an experiment, such as:
+- Who participated (the subject or horse)
+- When it happened
+- What type of experiment it was
+- Any comments or notes
+- The name of the log file
+
+The ExperimentCB class is specifically for cognitive bias experiments and includes some extra details.
+
+2. Trial and TrialCB Classes:
+These represent individual trials within an experiment. They keep track of:
+- When the trial started and ended
+- What number trial it was
+- For cognitive bias trials (TrialCB), additional information like the type of response and direction
+
+3. Event and EventCB Classes:
+These capture specific moments or actions during a trial. They record:
+- What happened (the type of event)
+- When it happened
+- How long into the trial it occurred
+
+4. ResponseCB Class (CB experiments only):
+This is specific to cognitive bias experiments and records the subject's responses, including:
+- When the response occurred
+- How long it took (response time)
+
+These classes work together to organise and make sense of the data from your experiments. They turn raw log files into structured data that's easier to analyse and understand. The Logfile class does the hard work of interpreting each file, while the Logs class manages the collection of all your files.
