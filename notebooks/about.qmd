@@ -9,15 +9,109 @@ This repository is designed and built by Michael Booth of [DataBooth] in collobo
 
 ## Purpose
 
-The provided notebooks and supporting code are part of a data analysis pipeline for horse behavioral experiments. The primary goal is to process and analyse log files generated during these experiments, for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments. 
+The provided notebooks and supporting code are part of a data analysis pipeline for horse behavioral experiments. The primary goal is to process and analyse log files generated during these experiments, and to store this data in databases, for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments. 
 
-## Features
+## High Lvel Workflow
 
-Each of the notebooks uses some (or all) of the following custom classes to assist with the analysis:
+The provided code and notebooks focus on two types of experiments: RPE and CB. The process is essentially the same for both RPE and CB experiments, with minor differences in data structure (e.g. an additional table `ResponsesCB` for CB experiments).
+
+1. Logfile Reconciliation:
+`logfile-reconciliation-CB.ipynb`
+`logfile-reconciliation-RPE.ipynb`
+
+Purpose: Identify which log files should be included or excluded from the analysis for each experiment type.
+
+Steps:
+- Load and Parse Log Files: Load log files and parse their filenames to extract metadata.
+- Apply Exclusion Rules: Exclude log files based on predefined rules (e.g., test runs, bad data).
+- Export Lists: Export lists of included and excluded log files for further processing.
+
+2. Logfile to Database:
+   
+- `logfile-to-database-CB.ipynb`
+- `logfile-to-database-RPE.ipynb`
+
+Purpose: Load the reconciled log files into a DuckDB database for each experiment type.
+
+Steps:
+- Load Log Files: Load the log files determined to be included from the reconciliation step.
+- Parse and Extract Data: Extract relevant data from each log file and structure it for database insertion.
+- Insert Data into Database: Insert the parsed data into a DuckDB database.
+
+3. Database Queries:
+   
+- `database-queries-CB.ipynb`
+- `database-queries-RPE.ipynb`
+
+Purpose: Cross-check the data in the databases and provide examples of typical queries for each experiment type.
+
+Steps:
+- Setup Database Connection: Connect to the DuckDB database.
+- Run SQL Queries: Execute SQL queries to verify data integrity and demonstrate typical data retrieval operations.
+- Provide Query Examples: Showcase various SQL queries that might be useful for future analysis.
+
+Note: These notebooks do not perform specific data analysis at this stage. They serve as a foundation for future analysis, which may be conducted in additional notebooks or external tools.
+
+4. Corrections to CB database:
+
+- `corrections-to-database-CB.ipynb`
+
+Purpose: For CB experiments only, load and apply manual corrections to the CB database.
+
+5. Supporting Code:
+
+
+
+
+1. Mermaid Diagram
+
+```mermaid
+graph TD
+    A[Start] --> B[Load Log Files]
+    B --> C[Parse Filenames]
+    C --> D[Apply Exclusion Rules]
+    D --> E[Export Included/Excluded Lists]
+    E --> F[Load Included Log Files]
+    F --> G[Parse and Extract Data]
+    G --> H[Insert Data into DuckDB]
+    H --> I[Run SQL Queries]
+    I --> J[Generate Insights]
+    J --> K[End]
+
+    classDef process fill:#f9f,stroke:#333,stroke-width:2px;
+    class A,B,C,D,E,F,G,H,I,J,K process;
+```
+
+Explanation of the Diagram
+
+1. Start: The process begins with the loading of log files.
+2. Load Log Files: Log files are loaded from a specified directory.
+3. Parse Filenames: Filenames are parsed to extract metadata such as subject name and experiment type.
+4. Apply Exclusion Rules: Predefined rules are applied to exclude certain log files.
+5. Handle Specific Files: Additional criteria are used to include or exclude specific log files.
+6. Export Included/Excluded Lists: Lists of included and excluded log files are exported for further processing.
+7. Load Included Log Files: The included log files are loaded for detailed analysis.
+8. Parse and Extract Data: Relevant data is extracted from each log file and structured for database insertion.
+9. Insert Data into DuckDB: The parsed data is inserted into a DuckDB database. For CB experiments only, manual corrections are loaded and applied.
+10. Export Database Tables: The database tables are exported to human-readable formats for review.
+11. End: The process concludes with the export of database tables.
+
+This workflow ensures that only relevant and high-quality log files are included in the analysis, and the data is structured and stored in a database for both RPE and CB experiments. The process is designed to be flexible and repeatable for both experiment types, with minor adjustments to account for the differences in data structure. The database queries serve as a foundation for future in-depth analysis, providing a way to verify data integrity and demonstrate typical data retrieval operations.
+
+## Code Features
+
+The following (custom) modules are used to assist with the data transformations and analysis:
+
+- Logfiles Module: Handles the loading, parsing, and management of log files.
+- Project Module: Manages project configuration, directory setup, and database initialization.
+- Subject Module: Loads and processes subject information from external files, providing crucial data for both RPE and CB experiments.
+- Utils Module: Provides utility functions for displaying class definitions.
+
+The key custom classes to assist with the analysis are:
 
 ### Project Class
 
-The Project class is like a central organiser for your research project. It helps you keep everything tidy and in the right place. Here's what it does:
+The Project class (`project.py`) is like a central organiser for your research project. It helps you keep everything tidy and in the right place. Here's what it does:
 
 1. Sets up your project's structure: It creates folders for your data, results, and other important files.
 2. Manages your database: It sets up and maintains a database (by experiment type i.e. RPE or CB) where you can store all your experimental data.
@@ -28,7 +122,7 @@ Think of the Project class as your personal assistant for your research project.
 
 ### Subject Class
 
-The Subject class represents an individual participant in your experiment - in this case, a horse. It's like a digital profile for each horse in your study. Here's what it does:
+The Subject class (`subject.py`) represents an individual participant in your experiment - in this case, a horse. It's like a digital profile for each horse in your study. Here's what it does:
 
 1. Stores information about the horse: It keeps track of details like the horse's name, cohort, and any other relevant characteristics.
 2. Manages experimental data: It helps you organise and access the data collected for each horse during the experiments.
@@ -39,6 +133,8 @@ Think of the Subject class as a digital folder for each horse in your study. It 
 Together, these classes help you organise your research project, manage your data efficiently, and keep track of information about each participant in your study. They're designed to make your research process smoother and more organised.
 
 ### Logfile Classes
+
+These are both located in `logfiles.py`.
 
 1. Logfile Class:
 This is like a digital version of a physical log file. It can:
@@ -53,6 +149,8 @@ This is like a file cabinet for all your log files. It can:
 - Keep track of which files are included or excluded from analysis
 
 ### Experimental Classes
+
+These are also located in `logfiles.py`.
 
 1. Experiment and ExperimentCB Classes:
 These are like digital record cards for each experiment. They store important information about an experiment, such as:
