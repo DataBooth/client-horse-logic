@@ -5,7 +5,7 @@ format: html
 
 # About This Repository
 
-This repository is designed and built by Michael Booth of [DataBooth](https://wwww.databooth.com.au) in colloboration with the Research Leader [Cathrynne Henshall](mailto:ponies@hillydale.com.au).
+This repository is designed and built by Michael Booth of [DataBooth](https://www.databooth.com.au) in colloboration with the Research Leader [Cathrynne Henshall](mailto:ponies@hillydale.com.au).
 
 ## Purpose
 
@@ -147,7 +147,7 @@ These are also located in `logfiles.py`.
 
 1. `Experiment` and `ExperimentCB` Classes:
 These are like digital record cards for each experiment. They store important information about an experiment, such as:
-- Who participated (the subject or horse)
+- Who participated (the subject)
 - When it happened
 - What type of experiment it was
 - Any comments or notes
