@@ -11,6 +11,8 @@ This repository is designed and built by Michael Booth of [DataBooth](https://ww
 
 The provided notebooks and supporting code are part of a data analysis pipeline for horse behavioral experiments. The primary goal is to process and analyse log files generated during these experiments, and to store this data in databases, for both Reward Prediction Error (RPE) and Cognitive Bias (CB) experiments. 
 
+The repository also contains the code for controlling the experiments performed on the RaspeberryPi (see the `src` directory).
+
 ## High Lvel Workflow
 
 The provided code and notebooks focus on two types of experiments: RPE and CB. The process is essentially the same for both RPE and CB experiments, with minor differences in data structure (e.g. an additional table `ResponsesCB` for CB experiments).
@@ -31,12 +33,12 @@ Steps:
 - `logfile-to-database-CB.ipynb`
 - `logfile-to-database-RPE.ipynb`
 
-Purpose: Load the reconciled log files into a DuckDB database for each experiment type.
+Purpose: Load the reconciled log files into a `DuckDB` database for each experiment type.
 
 Steps:
 - Load Log Files: Load the log files determined to be included from the reconciliation step.
 - Parse and Extract Data: Extract relevant data from each log file and structure it for database insertion.
-- Insert Data into Database: Insert the parsed data into a DuckDB database.
+- Insert Data into Database: Insert the parsed data into a `DuckDB` database.
 
 3. Database Queries:
    
@@ -46,7 +48,7 @@ Steps:
 Purpose: Cross-check the data in the databases and provide examples of typical queries for each experiment type.
 
 Steps:
-- Setup Database Connection: Connect to the DuckDB database.
+- Setup Database Connection: Connect to the `DuckDB` database.
 - Run SQL Queries: Execute SQL queries to verify data integrity and demonstrate typical data retrieval operations.
 - Provide Query Examples: Showcase various SQL queries that might be useful for future analysis.
 
@@ -58,28 +60,22 @@ Note: These notebooks do not perform specific data analysis at this stage. They 
 
 Purpose: For CB experiments only, load and apply manual corrections to the CB database.
 
-5. Supporting Code:
+### Process Flow Diagram
 
-
-
-
-1. Mermaid Diagram
-
-```mermaid
+```{mermaid}
 graph TD
-    A[Start] --> B[Load Log Files]
-    B --> C[Parse Filenames]
-    C --> D[Apply Exclusion Rules]
-    D --> E[Export Included/Excluded Lists]
-    E --> F[Load Included Log Files]
-    F --> G[Parse and Extract Data]
-    G --> H[Insert Data into DuckDB]
-    H --> I[Run SQL Queries]
-    I --> J[Generate Insights]
-    J --> K[End]
+    A[1. Start] --> B[2. Load Log files]
+    B --> C[3. Parse filenames]
+    C --> D[4. Apply Exclusion rules]
+    D --> E[5. Export Included/Excluded lists]
+    E --> F[6. Load Included Log files]
+    F --> G[7. Parse and extract data]
+    G --> H[8. Insert data into `DuckDB`]
+    H --> I[9. Export Database tables]
+    I --> J[10. End]
 
     classDef process fill:#f9f,stroke:#333,stroke-width:2px;
-    class A,B,C,D,E,F,G,H,I,J,K process;
+    class A,B,C,D,E,F,G,H,I,J process;
 ```
 
 Explanation of the Diagram
@@ -87,14 +83,13 @@ Explanation of the Diagram
 1. Start: The process begins with the loading of log files.
 2. Load Log Files: Log files are loaded from a specified directory.
 3. Parse Filenames: Filenames are parsed to extract metadata such as subject name and experiment type.
-4. Apply Exclusion Rules: Predefined rules are applied to exclude certain log files.
-5. Handle Specific Files: Additional criteria are used to include or exclude specific log files.
-6. Export Included/Excluded Lists: Lists of included and excluded log files are exported for further processing.
-7. Load Included Log Files: The included log files are loaded for detailed analysis.
-8. Parse and Extract Data: Relevant data is extracted from each log file and structured for database insertion.
-9. Insert Data into DuckDB: The parsed data is inserted into a DuckDB database. For CB experiments only, manual corrections are loaded and applied.
-10. Export Database Tables: The database tables are exported to human-readable formats for review.
-11. End: The process concludes with the export of database tables.
+4. Apply Exclusion Rules: Predefined rules are applied to exclude certain log files. Handle Specific Files: Additional criteria are used to include or exclude specific log files.
+5. Export Included/Excluded Lists: Lists of included and excluded log files are exported for further processing.
+6. Load Included Log Files: The included log files are loaded for detailed analysis.
+7. Parse and Extract Data: Relevant data is extracted from each log file and structured for database insertion.
+8. Insert Data into `DuckDB`: The parsed data is inserted into a `DuckDB` database. For CB experiments only, manual corrections are loaded and applied.
+9.  Export Database Tables: The database tables are exported to human-readable formats for review.
+10. End: The process concludes with the export of database tables.
 
 This workflow ensures that only relevant and high-quality log files are included in the analysis, and the data is structured and stored in a database for both RPE and CB experiments. The process is designed to be flexible and repeatable for both experiment types, with minor adjustments to account for the differences in data structure. The database queries serve as a foundation for future in-depth analysis, providing a way to verify data integrity and demonstrate typical data retrieval operations.
 
@@ -102,16 +97,16 @@ This workflow ensures that only relevant and high-quality log files are included
 
 The following (custom) modules are used to assist with the data transformations and analysis:
 
-- Logfiles Module: Handles the loading, parsing, and management of log files.
-- Project Module: Manages project configuration, directory setup, and database initialization.
-- Subject Module: Loads and processes subject information from external files, providing crucial data for both RPE and CB experiments.
+- Logfiles Module (`logfiles.py`): Handles the loading, parsing, and management of log files.
+- Project Module (`project.py`): Manages project configuration, directory setup, and database initialisation.
+- Subject Module (`subject.py`): Loads and processes subject information from external files, providing crucial data for both RPE and CB experiments.
 - Utils Module: Provides utility functions for displaying class definitions.
 
 The key custom classes to assist with the analysis are:
 
 ### Project Class
 
-The Project class (`project.py`) is like a central organiser for your research project. It helps you keep everything tidy and in the right place. Here's what it does:
+The Project class is like a central organiser for your research project. It helps you keep everything tidy and in the right place. Here's what it does:
 
 1. Sets up your project's structure: It creates folders for your data, results, and other important files.
 2. Manages your database: It sets up and maintains a database (by experiment type i.e. RPE or CB) where you can store all your experimental data.
@@ -122,7 +117,7 @@ Think of the Project class as your personal assistant for your research project.
 
 ### Subject Class
 
-The Subject class (`subject.py`) represents an individual participant in your experiment - in this case, a horse. It's like a digital profile for each horse in your study. Here's what it does:
+The Subject class represents an individual participant in your experiment - in this case, a horse. It's like a digital profile for each horse in your study. Here's what it does:
 
 1. Stores information about the horse: It keeps track of details like the horse's name, cohort, and any other relevant characteristics.
 2. Manages experimental data: It helps you organise and access the data collected for each horse during the experiments.
@@ -134,13 +129,11 @@ Together, these classes help you organise your research project, manage your dat
 
 ### Logfile Classes
 
-These are both located in `logfiles.py`.
-
 1. Logfile Class:
 This is like a digital version of a physical log file. It can:
 - Read and store the contents of a log file
 - Parse the filename to extract important information
-- Interpret the contents of the file to create Experiment, Trial, and Event objects (for both RPE and CB experiments)
+- Interpret the contents of the file to create `Experiment`, `Trial`, and `Event` objects (for both RPE and CB experiments)
 
 2. Logs Class:
 This is like a file cabinet for all your log files. It can:
@@ -152,7 +145,7 @@ This is like a file cabinet for all your log files. It can:
 
 These are also located in `logfiles.py`.
 
-1. Experiment and ExperimentCB Classes:
+1. `Experiment` and `ExperimentCB` Classes:
 These are like digital record cards for each experiment. They store important information about an experiment, such as:
 - Who participated (the subject or horse)
 - When it happened
@@ -160,23 +153,142 @@ These are like digital record cards for each experiment. They store important in
 - Any comments or notes
 - The name of the log file
 
-The ExperimentCB class is specifically for cognitive bias experiments and includes some extra details.
+The `ExperimentCB` class is specifically for cognitive bias experiments and includes some extra details.
 
-2. Trial and TrialCB Classes:
+2. `Trial` and `TrialCB` Classes:
 These represent individual trials within an experiment. They keep track of:
 - When the trial started and ended
 - What number trial it was
-- For cognitive bias trials (TrialCB), additional information like the type of response and direction
+- For cognitive bias trials (`TrialCB`), additional information like the type of response and direction
 
-3. Event and EventCB Classes:
+3. `Event` and `EventCB` Classes:
 These capture specific moments or actions during a trial. They record:
 - What happened (the type of event)
 - When it happened
 - How long into the trial it occurred
 
-4. ResponseCB Class (CB experiments only):
+4. `RepsonseCB` Class (CB experiments only):
 This is specific to cognitive bias experiments and records the subject's responses, including:
 - When the response occurred
 - How long it took (response time)
 
-These classes work together to organise and make sense of the data from your experiments. They turn raw log files into structured data that's easier to analyse and understand. The Logfile class does the hard work of interpreting each file, while the Logs class manages the collection of all your files.
+These classes work together to organise and make sense of the data from your experiments. They turn raw log files into structured data that's easier to analyse and understand. The `Logfile` class does the hard work of interpreting each file, while the `Logs` class manages the collection of all your files.
+
+## Database details
+
+### RPE - Entity Relationship Diagram
+
+```{mermaid}
+erDiagram
+    Experiments {
+        int ExperimentID PK "Primary Key"
+        varchar SubjectName
+        int SessionNumber
+        varchar ExperimentType
+        text Comment
+        varchar StartDateTime
+        varchar LogFileName
+        varchar MeasurementFileName
+    }
+
+    Parameters {
+        int ParameterID PK "Primary Key"
+        int ExperimentID FK "Foreign Key"
+        varchar ParameterName
+        varchar ParameterValue
+    }
+
+    Trials {
+        int TrialID PK "Primary Key"
+        int ExperimentID FK "Foreign Key"
+        int TrialNumber
+        datetime StartToneDateTime
+    }
+
+    Events {
+        int EventID PK "Primary Key"
+        int TrialID FK "Foreign Key"
+        varchar EventType
+        datetime EventDateTime
+    }
+
+    Experiments ||--o{ Parameters : "has"
+    Experiments ||--o{ Trials : "has"
+    Trials ||--o{ Events : "has"
+```
+
+### CB - Entity Relationship Diagram
+
+```{mermaid}
+erDiagram
+    ExperimentCB ||--o{ TrialCB : contains
+    TrialCB ||--o{ EventCB : has
+    TrialCB ||--o| ResponseCB : may_have
+
+    ExperimentCB {
+        int ExperimentID PK
+        string Cohort
+        string SubjectName
+        int SubjectNumber
+        int SessionNumber
+        string SessionType
+        string ExperimentType
+        string Comment
+        datetime DateTime
+        string LogFileName
+        json Parameters
+    }
+
+    TrialCB {
+        int TrialID PK
+        int ExperimentID FK
+        int TrialNumber
+        string ResponseType
+        string TrialSubType
+        string Direction
+        string CriterionType
+        float CriterionCount
+        datetime TrialStartTime
+        datetime TrialEndTime
+        string SessionType
+    }
+
+    ResponseCB {
+        int ResponseID PK
+        int TrialID FK
+        float ResponseTime
+        datetime EventDateTime
+    }
+
+    EventCB {
+        int EventID PK
+        int TrialID FK
+        string EventType
+        datetime EventTime
+        float ElapsedTime
+    }
+```
+
+
+### Mappings of dataclasses to database tables
+
+Mappings between the data classes and their corresponding `DuckDB` database tables:
+
+#### RPE
+
+1. **Experiment**: Maps to the `Experiments` table, storing details about the experiment such as subject name, session number, and parameters.
+
+2. **Trial**: Maps to the `Trials` table, representing individual trials within an experiment with start and end times.
+
+3. **Event**: Maps to the `Events` table, capturing specific events that occur during trials, including event types and timings.
+
+#### CB
+
+1. **ExperimentCB**: Maps to the `ExperimentsCB` table, similar to `Experiment` but includes a session type field for cognitive bias experiments.
+
+2. **TrialCB**: Maps to the `TrialsCB` table, representing trials in cognitive bias experiments with additional fields for response type and criteria.
+
+3. **`RepsonseCB`**: Maps to the `ResponsesCB` table, recording responses specific to cognitive bias trials, including response times.
+
+4. **`EventCB`**: Maps to the `EventsCB` table, capturing events during cognitive bias trials with relevant timing information.
+
