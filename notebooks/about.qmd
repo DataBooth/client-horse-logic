@@ -5,7 +5,7 @@ format: html
 
 # About This Repository
 
-This repository is designed and built by Michael Booth of [DataBooth] in colloboration with the research lead [Cathrynne Henshall](mailto:ponies@hillydale.com.au).
+This repository is designed and built by Michael Booth of [DataBooth](https://wwww.databooth.com.au) in colloboration with the Research Leader [Cathrynne Henshall](mailto:ponies@hillydale.com.au).
 
 ## Purpose
 
