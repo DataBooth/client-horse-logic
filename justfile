@@ -76,7 +76,7 @@ publish_to_public_repo:
     # Clean up
     cd "$ORIGINAL_DIR"
     rm -rf public_repo
-    
+
 
 render:
     cd notebooks && quarto render
@@ -85,6 +85,16 @@ list-notebooks:
     @echo "Available notebooks:"
     @ls -1 notebooks/*.ipynb 2>/dev/null || echo "No notebooks found"
 
+
+# Copy local DuckDB database to MotherDuck
+cp2md local_db remote_db:
+    #!/usr/bin/env sh
+    echo "Copying database to MotherDuck: {{local_db}} -> {{remote_db}}..."
+    duckdb << EOF
+    ATTACH 'md:';
+    CREATE OR REPLACE DATABASE {{remote_db}} FROM '{{local_db}}';    
+    EOF
+    echo "Database copied to MotherDuck successfully."
 
 
 # Execute and render a Quarto notebook (to .html)
