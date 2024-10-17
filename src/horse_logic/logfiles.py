@@ -11,15 +11,6 @@ from IPython.display import Markdown, display
 from loguru import logger
 
 
-def parse_direction(comment):
-    comment_lower = comment.lower()
-    if "right" in comment_lower:
-        return "RIGHT"
-    elif "left" in comment_lower:
-        return "LEFT"
-    else:
-        return None
-
 
 # RPE Experiments
 
@@ -285,8 +276,13 @@ class Logfile:
         return trials, events
 
     def parse_direction(self, comments):
-        # Implement direction parsing logic here
-        pass
+        comment_lower = comments.lower()
+        if "right" in comment_lower:
+            return "RIGHT"
+        elif "left" in comment_lower:
+            return "LEFT"
+        else:
+            return None
 
     def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, List]]:
         file_content_str = "".join(self.file_contents)
