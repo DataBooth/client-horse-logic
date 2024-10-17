@@ -1,11 +1,15 @@
+import functools
 import sys
+import textwrap
 import urllib.parse
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
 import duckdb
 import itables.options as opt
 import pandas as pd
+import sqlparse
 import yaml
 from IPython.display import HTML, Markdown, display
 from itables import init_notebook_mode
@@ -84,6 +88,7 @@ class Project:
         if self._db_connection is None:
             self._db_connection = duckdb.connect(str(self.DB_FILE_PATH))
             logger.info(f"Connected to database: {self.DB_FILE_PATH}")
+            logger.info(f"DuckDB version: {self.get_duckdb_version()}")
         else:
             logger.info("Database connection already exists")
 
@@ -107,6 +112,60 @@ class Project:
             sql_commands = file.read()
         conn.execute(sql_commands)
         logger.info(f"Tables created successfully from {sql_path}")
+
+
+    def run_multiple_queries(self, sql: str):
+        """
+        Execute multiple SQL queries and display the results in Jupyter.
+
+        Args:
+            sql (str): A semicolon-separated string of SQL queries to execute.
+
+        Raises:
+            ValueError: If no valid queries are found in the input string.
+
+        This method splits the input SQL string into individual queries, executes each one,
+        and displays the query along with its results. If a query fails, an error message
+        will be displayed instead of the results. Each query is numbered for clarity.
+        """
+        queries = [q.strip() for q in sql.split(";") if q.strip()]
+        
+        if not queries:
+            raise ValueError("No valid queries found in the input string.")
+        
+        conn = self.get_db_connection()
+
+        for n_query, query in enumerate(queries, 1):
+            try:
+                display(Markdown(f"#### Query {n_query}:"))
+                display(Markdown(f"```sql\n{query}\n```"))
+                
+                result = conn.sql(query).df()
+                
+                if result.empty:
+                    display(Markdown("*No results found*"))
+                else:
+                    display(result)
+            except Exception as e:
+                display(Markdown(f"**Error executing query {n_query}:**"))
+                display(Markdown(f"```\n{str(e)}\n```"))
+            finally:
+                display(Markdown("---"))  # Add a separator between queries
+
+    def get_duckdb_version(self):
+        """
+        Get the version of DuckDB being used.
+
+        Returns:
+            str: The version of DuckDB.
+        """
+        try:
+            conn = self.get_db_connection()
+            version_query = "SELECT version();"
+            result = conn.execute(version_query).fetchone()
+            return str(result[0]) if result else "Unable to retrieve DuckDB version"
+        except Exception as e:
+            return f"Error retrieving DuckDB version: {str(e)}"
 
     def close_db_connection(self):
         if self._db_connection:
@@ -251,6 +310,62 @@ class Project:
         formatter = HtmlFormatter(style='friendly')
         highlighted = highlight(content, lexer, formatter)
         display(HTML(f'<style>{formatter.get_style_defs()}</style>{highlighted}'))
+
+
+    def sql_to_csv(self, csv_filename=None, purpose=None):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                nonlocal csv_filename
+                # Generate a default filename if not provided
+                if csv_filename is None:
+                    timestamp = datetime.now().strftime("%Y%m%d") # _%H%M%S")
+                    func_name = func.__name__
+                    csv_filename = f"{func_name}_{timestamp}.csv"
+
+                # Execute the original function with the project as the first argument
+                result = func(self, *args, **kwargs)
+                
+                # Convert the result to a DataFrame if it's not already
+                if not isinstance(result, pd.DataFrame):
+                    result = pd.DataFrame(result)
+                
+                # Create a Path object for the CSV file in the output directory
+                csv_path = self.output_dir / csv_filename
+                
+                # Ensure the output directory exists
+                csv_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Export the DataFrame to CSV
+                result.to_csv(csv_path, index=False)
+                
+                # Format the SQL query
+                formatted_query = sqlparse.format(args[0], reindent=True, keyword_case='upper')
+                
+                # Append the SQL query and purpose (if provided) as comments to the CSV file
+                with open(csv_path, 'a') as f:
+                    f.write('\n\n')
+                    if purpose:
+                        f.write(f'/* Purpose:\n{textwrap.fill(purpose, width=80)}\n*/\n\n')
+                    f.write('/* SQL Query:\n')
+                    for line in formatted_query.split('\n'):
+                        wrapped_lines = textwrap.wrap(line, width=80)
+                        for wrapped_line in wrapped_lines:
+                            f.write(f'{wrapped_line}\n')
+                    f.write('*/\n')
+                
+                # Create a relative path for the file link
+                relative_path = csv_path.relative_to(Path.cwd())
+                
+                # Display the DataFrame
+                display(result)
+                
+                # Display a link to the CSV file
+                display(HTML(f'<a href="{relative_path}" target="_blank">Click to download:  <code>{csv_path.name}</code></a>'))
+                
+                return result
+            return wrapper
+        return decorator
 
 # Usage example
 # if __name__ == "__main__":
