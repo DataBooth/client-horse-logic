@@ -5,7 +5,7 @@
 groups = ["default", "dev", "hardware", "util"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:c4b9ce58a6fdbab35ffe3a45ba2142205f89b618f939a5973d28bc555ef395ff"
+content_hash = "sha256:1dba7048f4e9dd66dac7b3acbfdf6f0ecf255cc84cf964614784961cc44d9b8c"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -2668,6 +2668,17 @@ groups = ["default"]
 files = [
     {file = "sqlglot-25.5.1-py3-none-any.whl", hash = "sha256:80019318158069edc11e6892f74c696e5579a5588da2a0ce11dd7e215a3cb318"},
     {file = "sqlglot-25.5.1.tar.gz", hash = "sha256:c167eac4536dd6ed202fee5107b76b8cb05db85550a47e8448bf6452c4780158"},
+]
+
+[[package]]
+name = "sqlparse"
+version = "0.5.1"
+requires_python = ">=3.8"
+summary = "A non-validating SQL parser."
+groups = ["default"]
+files = [
+    {file = "sqlparse-0.5.1-py3-none-any.whl", hash = "sha256:773dcbf9a5ab44a090f3441e2180efe2560220203dc2f8c0b0fa141e18b505e4"},
+    {file = "sqlparse-0.5.1.tar.gz", hash = "sha256:bb6b4df465655ef332548e24f08e205afc81b9ab86cb1c45657a7ff173a3a00e"},
 ]
 
 [[package]]
