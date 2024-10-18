@@ -21,9 +21,9 @@ The provided code and notebooks focus on two types of experiments: RPE and CB. T
 `logfile-reconciliation-CB.ipynb`
 `logfile-reconciliation-RPE.ipynb`
 
-Purpose: Identify which log files should be included or excluded from the analysis for each experiment type.
+**Purpose:** Identify which log files should be included or excluded from the analysis for each experiment type.
 
-Steps:
+**Steps:**
 - Load and Parse Log Files: Load log files and parse their filenames to extract metadata.
 - Apply Exclusion Rules: Exclude log files based on predefined rules (e.g., test runs, bad data).
 - Export Lists: Export lists of included and excluded log files for further processing.
@@ -33,9 +33,9 @@ Steps:
 - `logfile-to-database-CB.ipynb`
 - `logfile-to-database-RPE.ipynb`
 
-Purpose: Load the reconciled log files into a `DuckDB` database for each experiment type.
+**Purpose:** Load the reconciled log files into a `DuckDB` database for each experiment type.
 
-Steps:
+**Steps:**
 - Load Log Files: Load the log files determined to be included from the reconciliation step.
 - Parse and Extract Data: Extract relevant data from each log file and structure it for database insertion.
 - Insert Data into Database: Insert the parsed data into a `DuckDB` database.
@@ -45,20 +45,46 @@ Steps:
 - `database-queries-CB.ipynb`
 - `database-queries-RPE.ipynb`
 
-Purpose: Cross-check the data in the databases and provide examples of typical queries for each experiment type.
+**Purpose:** Cross-check the data in the databases and provide examples of typical queries for each experiment type.
 
-Steps:
+**Steps:**
 - Setup Database Connection: Connect to the `DuckDB` database.
 - Run SQL Queries: Execute SQL queries to verify data integrity and demonstrate typical data retrieval operations.
 - Provide Query Examples: Showcase various SQL queries that might be useful for future analysis.
 
 Note: These notebooks do not perform specific data analysis at this stage. They serve as a foundation for future analysis, which may be conducted in additional notebooks or external tools.
 
-4. Corrections to CB database:
+
+4. Database Consistency Checks
+   
+- `database-checks-CB.ipynb`
+  
+**Purpose:** Perform consistency checks on the local DuckDB CB database created using `logfile-to-database-CB.ipynb`.
+
+**Steps:** 
+- Run Integrity Checks: Execute a series of SQL queries to verify the integrity of the CB database:
+  - Check for orphaned records (foreign key constraint violations)
+  - Check for duplicate primary keys
+  - Check for NULL values in primary key columns
+  - Check for records with ID = 0
+  - Check for consistency in trial numbering within experiments
+  - Verify that all trials have associated events
+  - Check for mismatches in SessionType between ExperimentCBs and TrialCBs
+- Display Results: Show the results of each query, highlighting any potential issues with data integrity.
+
+This notebook serves as a crucial step in the data analysis pipeline, ensuring the consistency and integrity of the database before proceeding with further analysis. It helps identify any potential issues that may have occurred during the data import process or due to inconsistencies in the original log files.
+
+5. Corrections to CB database:
 
 - `corrections-to-database-CB.ipynb`
 
-Purpose: For CB experiments only, load and apply manual corrections to the CB database.
+**Purpose:** For CB experiments only, load and apply manual corrections to the CB database.
+
+**Steps:**
+- Load the corrections from the Corrections workbook (field, current value, corrected value).
+- Insert these into a CB database table.
+- Apply corrections to a new view on the data.
+
 
 ### Process Flow Diagram
 
