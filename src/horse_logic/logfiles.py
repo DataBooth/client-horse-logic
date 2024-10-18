@@ -199,6 +199,7 @@ class Logfile:
                 SessionNumber=components["session_number"],
                 SessionType=session_type,
                 ExperimentType=components["experiment_type"],
+                Direction=None, # to be looked up from subject (cohort) info
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
                 LogFileName=components["filename"],
@@ -274,18 +275,20 @@ class Logfile:
             return None, None
         return trials, events
 
-    def parse_direction(self, comments):
-        comment_lower = comments.lower()
-        if "right" in comment_lower:
-            return "RIGHT"
-        elif "left" in comment_lower:
-            return "LEFT"
-        else:
-            return None
+    # Direction is now looked up from the Cohort info
+
+    # def parse_direction(self, comments):
+    #     comment_lower = comments.lower()
+    #     if "right" in comment_lower:
+    #         return "RIGHT"
+    #     elif "left" in comment_lower:
+    #         return "LEFT"
+    #     else:
+    #         return None
 
     def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, List]]:
         file_content_str = "".join(self.file_contents)
-        direction = self.parse_direction(self.parse_comments())
+        # direction = self.parse_direction(self.parse_comments())
         trial_start_pattern = (
             r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
         )
@@ -332,12 +335,11 @@ class Logfile:
                     TrialNumber=int(trial_number),
                     ResponseType=response_type,
                     TrialSubType=trial_sub_type,
-                    Direction=direction,
                     CriterionType=criterion_type if criterion_count else None,
                     CriterionCount=float(criterion_count) if criterion_count else None,
                     TrialStartTime=event_datetime,
                     TrialEndTime=event_datetime,
-                    SessionType=experiment.SessionType,
+                    # Direction and SessionType removed from here
                 )
                 trials.append(current_trial)
 

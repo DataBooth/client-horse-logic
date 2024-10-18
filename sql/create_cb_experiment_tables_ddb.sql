@@ -21,6 +21,7 @@ CREATE OR REPLACE TABLE ExperimentCBs (
     SessionNumber INTEGER,
     SessionType VARCHAR,  -- New field
     ExperimentType VARCHAR,
+    Direction VARCHAR,
     Comment VARCHAR,
     DateTime TIMESTAMP,
     LogFileName VARCHAR,
@@ -47,12 +48,10 @@ CREATE OR REPLACE TABLE TrialCBs (
     TrialNumber INTEGER,
     ResponseType VARCHAR,
     TrialSubType VARCHAR,
-    Direction VARCHAR,
     CriterionType VARCHAR,
     CriterionCount DOUBLE,
     TrialStartTime TIMESTAMP,
     TrialEndTime TIMESTAMP,
-    SessionType VARCHAR,  -- New field
     FOREIGN KEY (ExperimentID) REFERENCES ExperimentCBs (ExperimentID)
 );
 
