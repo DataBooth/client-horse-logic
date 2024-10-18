@@ -50,7 +50,6 @@ class Event:
 
 # CB Experiments
 
-
 @dataclass
 class ExperimentCB:
     ExperimentID: int
@@ -58,8 +57,9 @@ class ExperimentCB:
     SubjectName: str
     SubjectNumber: int
     SessionNumber: int
-    SessionType: str  # New field: "training" or "test"
+    SessionType: str  # "training" or "test"
     ExperimentType: str
+    Direction: str  # New field
     Comment: Optional[str]
     DateTime: datetime
     LogFileName: str
@@ -73,12 +73,11 @@ class TrialCB:
     TrialNumber: int
     ResponseType: str
     TrialSubType: str
-    Direction: str
     CriterionType: Optional[str]
     CriterionCount: Optional[float]
     TrialStartTime: datetime
     TrialEndTime: datetime
-    SessionType: str  # New field: "training" or "test"
+    # Direction and SessionType fields removed
 
 
 @dataclass
