@@ -16,7 +16,11 @@ class Subject:
             subject_df = pd.read_excel(cohort_data_path)
             logger.info(f"Loaded subject info from: {cohort_data_path}")
 
-            subject_df.rename({"No": "subject_number", "Horse": "subject_name", "Direction": "direction"}, axis=1, inplace=True)
+            subject_df.rename(
+                {"No": "subject_number", "Horse": "subject_name", "Direction": "direction"},
+                axis=1,
+                inplace=True,
+            )
             subject_df["subject_name"] = subject_df["subject_name"].str.lower()
             subject_df["direction"] = subject_df["direction"].str.upper()
 

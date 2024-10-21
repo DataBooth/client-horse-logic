@@ -1,16 +1,15 @@
 import glob
 import json
+import math
 import re
 from dataclasses import asdict, dataclass, fields
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from IPython.display import Markdown, display
 from loguru import logger
-
-
 
 # RPE Experiments
 
@@ -49,6 +48,7 @@ class Event:
 
 
 # CB Experiments
+
 
 @dataclass
 class ExperimentCB:
@@ -199,7 +199,7 @@ class Logfile:
                 SessionNumber=components["session_number"],
                 SessionType=session_type,
                 ExperimentType=components["experiment_type"],
-                Direction=None, # to be looked up from subject (cohort) info
+                Direction=None,  # to be looked up from subject (cohort) info
                 Comment=self.parse_comments(),
                 DateTime=components["datetime"],
                 LogFileName=components["filename"],
@@ -286,11 +286,11 @@ class Logfile:
     #     else:
     #         return None
 
-
-
     def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, pd.DataFrame]]:
         file_content_str = "".join(self.file_contents)
-        trial_start_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
+        trial_start_pattern = (
+            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
+        )
         trial_start_match = re.search(trial_start_pattern, file_content_str)
 
         if not trial_start_match:
@@ -377,7 +377,6 @@ class Logfile:
 
         return experiment_df, trials_df, responses_df, events_df
 
-
     def insert_record_to_database(self, con, record):
         table_name = (
             record.__class__.__name__.lower() + "s"
@@ -392,15 +391,9 @@ class Logfile:
             values.append(value)
         query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
         con.execute(query, tuple(values))
+        con.commit()  # Ensure the changes are committed to the database
 
-    def __str__(self):
-        return f"Logfile: {self.file_name}, {self.num_lines} lines"
-
-    def __repr__(self):
-        return f"<Logfile file_name={self.file_name!r}, num_lines={self.num_lines}>"
-
-
-    def insert_record_to_cb_database(self, con, record, table_name):
+    def insert_record_to_cb_database(self, con, record, table_name, debug=False):
         """
         Insert a Cognitive Bias record (from DataFrame) into the database.
 
@@ -409,15 +402,73 @@ class Logfile:
             record (dict): A dictionary representing a row from the DataFrame
             table_name (str): The name of the table to insert into
         """
-        columns = ", ".join(record.keys())
-        placeholders = ", ".join("?" for _ in record)
-        values = list(record.values())
+        columns = []
+        placeholders = []
+        values = []
 
-        # Convert dict to JSON string for any dictionary values
-        values = [json.dumps(v) if isinstance(v, dict) else v for v in values]
+        for key, value in record.items():
+            columns.append(key)
+            placeholders.append("?")
 
-        query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
-        con.execute(query, tuple(values))
+            if value is None:
+                logger.warning(f"NULL value detected for column '{key}' in table '{table_name}'")
+            elif isinstance(value, dict):
+                value = json.dumps(value)
+            elif isinstance(value, float) and math.isnan(value):
+                value = "NaN"
+                logger.warning(f"NaN value detected for column '{key}' in table '{table_name}'")
+
+            values.append(value)
+
+        columns_str = ", ".join(columns)
+        placeholders_str = ", ".join(placeholders)
+
+        query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders_str})"
+
+        if debug:
+            logger.debug(f"Executing query: {query}")
+            logger.debug(f"Values: {values}")
+
+        try:
+            con.execute(query, tuple(values))
+            con.commit()
+            if debug:
+                logger.info(f"Record inserted successfully into {table_name}")
+        except Exception as e:
+            logger.error(f"Error inserting record into {table_name}: {str(e)}")
+            logger.error(f"Failed query: {query}")
+            logger.error(f"Failed values: {values}")
+            raise
+
+    @staticmethod
+    def get_last_insert_id(con, table_name: str) -> int:
+        """
+        Retrieve the last inserted row ID for a given table.
+
+        This method executes a SQL query to get the maximum ROWID from the specified table.
+        It's useful for retrieving the ID of the last inserted record, especially when
+        working with auto-incrementing primary keys.
+
+        Args:
+            con: The database connection object.
+            table_name (str): The name of the table to query.
+
+        Returns:
+            int: The maximum ROWID from the specified table. If the table is empty,
+                 it returns 0.
+
+        Raises:
+            Any exceptions raised by the database connection's execute method.
+        """
+        query = f"SELECT MAX(ROWID) FROM {table_name}"
+        result = con.execute(query).fetchone()[0]
+        return result if result is not None else 0
+
+    def __str__(self):
+        return f"Logfile: {self.file_name}, {self.num_lines} lines"
+
+    def __repr__(self):
+        return f"<Logfile file_name={self.file_name!r}, num_lines={self.num_lines}>"
 
 
 class Logs:

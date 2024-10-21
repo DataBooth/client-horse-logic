@@ -20,7 +20,13 @@ from pygments.lexers import get_lexer_for_filename
 
 
 class Project:
-    def __init__(self, config_file='project_config.yaml', experiment_type=None, table_page_length=10, delete_existing_db=True):
+    def __init__(
+        self,
+        config_file="project_config.yaml",
+        experiment_type=None,
+        table_page_length=10,
+        delete_existing_db=True,
+    ):
         self.project_dir = self._find_project_root()
         self.config = self.load_config(config_file)
         self.experiment_type = experiment_type
@@ -33,15 +39,15 @@ class Project:
 
     def _find_project_root(self):
         current_dir = Path.cwd()
-        while current_dir.name != 'notebooks':
-            if (current_dir / 'project_config.yaml').exists():
+        while current_dir.name != "notebooks":
+            if (current_dir / "project_config.yaml").exists():
                 return current_dir
             current_dir = current_dir.parent
         return current_dir.parent  # Return the parent of 'notebooks'
 
     def load_config(self, config_file):
         config_path = self.project_dir / config_file
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             return yaml.safe_load(f)
 
     def _initialise_logger(self):
@@ -53,18 +59,20 @@ class Project:
         opt.pageLength = table_page_length
 
     def _initialise_directories(self):
-        for name, info in self.config['directories'].items():
+        for name, info in self.config["directories"].items():
             self.initialise_dir(name, info)
 
     def initialise_dir(self, name, info):
-        if isinstance(info['path'], dict):
+        if isinstance(info["path"], dict):
             # If path is a dict, assume it contains experiment-specific paths
-            if self.experiment_type not in info['path']:
-                raise ValueError(f"No path defined for experiment type '{self.experiment_type}' in directory '{name}'")
-            path = info['path'][self.experiment_type]
+            if self.experiment_type not in info["path"]:
+                raise ValueError(
+                    f"No path defined for experiment type '{self.experiment_type}' in directory '{name}'"
+                )
+            path = info["path"][self.experiment_type]
         else:
             # If path is a string, use it directly
-            path = info['path']
+            path = info["path"]
 
         full_path = self.project_dir / path
         setattr(self, f"{name}_dir", full_path)
@@ -73,14 +81,14 @@ class Project:
         logger.info(f"{name.capitalize()} directory purpose: {info['purpose']}")
 
     def _initialise_database(self, delete_existing_db=True):
-        db_config = self.config['database']
-        db_path = self.project_dir / db_config['path'].format(experiment_type=self.experiment_type)
+        db_config = self.config["database"]
+        db_path = self.project_dir / db_config["path"].format(experiment_type=self.experiment_type)
         self.DB_FILE_PATH = db_path
-        
+
         if delete_existing_db and db_path.exists():
             db_path.unlink()
             logger.info(f"Existing database file deleted: {db_path}")
-        
+
         logger.info(f"Database file path: {db_path}")
         logger.info(f"Database purpose: {db_config['purpose']}")
 
@@ -96,7 +104,7 @@ class Project:
         if self._db_connection is None:
             self.setup_database()
         return self._db_connection
-    
+
     @contextmanager
     def db_connection(self):
         conn = self.get_db_connection()
@@ -113,7 +121,6 @@ class Project:
         conn.execute(sql_commands)
         logger.info(f"Tables created successfully from {sql_path}")
 
-
     def run_multiple_queries(self, sql: str):
         """
         Execute multiple SQL queries and display the results in Jupyter.
@@ -129,19 +136,19 @@ class Project:
         will be displayed instead of the results. Each query is numbered for clarity.
         """
         queries = [q.strip() for q in sql.split(";") if q.strip()]
-        
+
         if not queries:
             raise ValueError("No valid queries found in the input string.")
-        
+
         conn = self.get_db_connection()
 
         for n_query, query in enumerate(queries, 1):
             try:
                 display(Markdown(f"#### Query {n_query}:"))
                 display(Markdown(f"```sql\n{query}\n```"))
-                
+
                 result = conn.sql(query).df()
-                
+
                 if result.empty:
                     display(Markdown("*No results found*"))
                 else:
@@ -184,14 +191,14 @@ class Project:
 
     def export_data(self, df, filepath, export_type, info_message=None, log_relative_path=True):
         filepath = Path(filepath)
-        
-        if export_type == 'csv':
+
+        if export_type == "csv":
             df.to_csv(filepath, index=False)
-        elif export_type == 'xlsx':
+        elif export_type == "xlsx":
             df.to_excel(filepath, index=False)
         else:
             raise ValueError(f"Unsupported export type: {export_type}")
-        
+
         if log_relative_path:
             try:
                 relative_path = filepath.relative_to(Path.cwd())
@@ -200,29 +207,63 @@ class Project:
                 path_info = f"Absolute path: {filepath}"
         else:
             path_info = f"Path: {filepath}"
-        
-        log_message = f"{len(df)} rows exported to {export_type.upper()}." # {path_info}"
+
+        log_message = f"{len(df)} rows exported to {export_type.upper()}."  # {path_info}"
         if info_message:
             log_message = f"{info_message}. {log_message}"
-        
+
         logger.info(log_message)
-        
+
         if filepath.exists():
             self.create_markdown_link(filepath)
         else:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
     def export_data_to_csv(self, df, filepath, info_message=None, log_relative_path=True):
-        self.export_data(df, filepath, 'csv', info_message, log_relative_path)
+        self.export_data(df, filepath, "csv", info_message, log_relative_path)
 
-    def export_data_to_xlsx(self, df, filepath, info_message=None, log_relative_path=True):
-        self.export_data(df, filepath, 'xlsx', info_message, log_relative_path)
+    def export_data_to_xlsx(
+        self, data, filepath, sheet_names=None, info_message=None, log_relative_path=True
+    ):
+        filepath = Path(filepath)
 
+        if not isinstance(data, list):
+            data = [data]
+
+        if sheet_names and len(sheet_names) != len(data):
+            raise ValueError("Number of sheet names must match number of DataFrames")
+
+        with pd.ExcelWriter(filepath) as writer:
+            for i, df in enumerate(data):
+                sheet_name = sheet_names[i] if sheet_names else f"Sheet{i+1}"
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+        total_rows = sum(len(df) for df in data)
+        log_message = f"{total_rows} total rows exported to XLSX across {len(data)} sheets."
+
+        if log_relative_path:
+            try:
+                relative_path = filepath.relative_to(Path.cwd())
+                path_info = f"Relative path: {relative_path}"
+            except ValueError:
+                path_info = f"Absolute path: {filepath}"
+        else:
+            path_info = f"Path: {filepath}"
+
+        if info_message:
+            log_message = f"{info_message}. {log_message}"
+
+        logger.info(log_message)
+
+        if filepath.exists():
+            self.create_markdown_link(filepath)
+        else:
+            logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
     def create_markdown_link(self, file_path, link_text=None, debug=False):
         file_path = Path(file_path).resolve()  # Get the absolute path
         project_root = self.project_dir.resolve()
-        notebooks_dir = project_root / 'notebooks'
+        notebooks_dir = project_root / "notebooks"
         cwd = Path.cwd().resolve()
 
         # Try to make the path relative to notebooks, project root, or cwd
@@ -238,7 +279,7 @@ class Project:
 
         if not file_path.exists():
             raise FileNotFoundError(f"The file {file_path} does not exist.")
-        
+
         # For display, always make the path relative to the current working directory if possible
         try:
             display_path = file_path.relative_to(cwd)
@@ -261,70 +302,67 @@ class Project:
             "link_path": str(link_path),
             "encoded_link_path": encoded_link_path,
             "display_path": str(display_path),
-            "file_path_input": str(file_path)
+            "file_path_input": str(file_path),
         }
 
         display(Markdown(markdown_link))
         if debug:
             print(f"Debug info: {debug_info}")  # Use print for debug info
         return markdown_link
-    
+
     def export_database_tables(self, output_subdir, output_format="xlsx"):
-            output_dir = self.output_dir / output_subdir
-            output_dir.mkdir(parents=True, exist_ok=True)
-            
-            con = self.get_db_connection()
-            
-            try:
-                tables = con.sql("SHOW TABLES;").fetchall()
+        output_dir = self.output_dir / output_subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-                if output_format == "xlsx":
-                    # Write to one Excel file by sheet name
-                    excel_path = output_dir / "all_tables.xlsx"
-                    with pd.ExcelWriter(excel_path) as writer:
-                        for table in tables:
-                            table_name = table[0]
-                            # Query the table and convert it to a pandas DataFrame
-                            df = con.table(table_name).to_df()
-                            df.to_excel(writer, sheet_name=table_name, index=False)
-                    logger.info(f"Exported database tables to: {excel_path}")
-                    self.create_markdown_link(excel_path)
+        con = self.get_db_connection()
 
-                elif output_format in ["csv", "parquet"]:
+        try:
+            tables = con.sql("SHOW TABLES;").fetchall()
+
+            if output_format == "xlsx":
+                # Write to one Excel file by sheet name
+                excel_path = output_dir / "all_tables.xlsx"
+                with pd.ExcelWriter(excel_path) as writer:
                     for table in tables:
                         table_name = table[0]
                         # Query the table and convert it to a pandas DataFrame
                         df = con.table(table_name).to_df()
+                        df.to_excel(writer, sheet_name=table_name, index=False)
+                logger.info(f"Exported database tables to: {excel_path}")
+                self.create_markdown_link(excel_path)
 
-                        if output_format == "csv":
-                            # Write to a CSV file
-                            csv_path = output_dir / f"{table_name}.csv"
-                            df.to_csv(csv_path, index=False)
-                            logger.info(f"Exported database table to: {csv_path}")
-                            self.create_markdown_link(csv_path)
-                        elif output_format == "parquet":
-                            # Write to a Parquet file
-                            parquet_path = output_dir / f"{table_name}.parquet"
-                            df.to_parquet(parquet_path, index=False)
-                            logger.info(f"Exported database table to: {parquet_path}")
-                            self.create_markdown_link(parquet_path)
+            elif output_format in ["csv", "parquet"]:
+                for table in tables:
+                    table_name = table[0]
+                    # Query the table and convert it to a pandas DataFrame
+                    df = con.table(table_name).to_df()
 
-                else:
-                    raise ValueError(f"Unsupported output format: {output_format}")
-            except Exception as e:
-                logger.error(f"Error exporting database tables: {e}")
+                    if output_format == "csv":
+                        # Write to a CSV file
+                        csv_path = output_dir / f"{table_name}.csv"
+                        df.to_csv(csv_path, index=False)
+                        logger.info(f"Exported database table to: {csv_path}")
+                        self.create_markdown_link(csv_path)
+                    elif output_format == "parquet":
+                        # Write to a Parquet file
+                        parquet_path = output_dir / f"{table_name}.parquet"
+                        df.to_parquet(parquet_path, index=False)
+                        logger.info(f"Exported database table to: {parquet_path}")
+                        self.create_markdown_link(parquet_path)
 
-
+            else:
+                raise ValueError(f"Unsupported output format: {output_format}")
+        except Exception as e:
+            logger.error(f"Error exporting database tables: {e}")
 
     def display_file_with_highlighting(self, relative_path):
         full_path = self.project_dir / relative_path
-        with open(full_path, 'r') as file:
+        with open(full_path, "r") as file:
             content = file.read()
         lexer = get_lexer_for_filename(full_path)
-        formatter = HtmlFormatter(style='friendly')
+        formatter = HtmlFormatter(style="friendly")
         highlighted = highlight(content, lexer, formatter)
-        display(HTML(f'<style>{formatter.get_style_defs()}</style>{highlighted}'))
-
+        display(HTML(f"<style>{formatter.get_style_defs()}</style>{highlighted}"))
 
     def sql_to_csv(self, csv_filename=None, purpose=None):
         def decorator(func):
@@ -333,53 +371,60 @@ class Project:
                 nonlocal csv_filename
                 # Generate a default filename if not provided
                 if csv_filename is None:
-                    timestamp = datetime.now().strftime("%Y%m%d") # _%H%M%S")
+                    timestamp = datetime.now().strftime("%Y%m%d")  # _%H%M%S")
                     func_name = func.__name__
                     csv_filename = f"{func_name}_{timestamp}.csv"
 
                 # Execute the original function with the project as the first argument
                 result = func(self, *args, **kwargs)
-                
+
                 # Convert the result to a DataFrame if it's not already
                 if not isinstance(result, pd.DataFrame):
                     result = pd.DataFrame(result)
-                
+
                 # Create a Path object for the CSV file in the output directory
                 csv_path = self.output_dir / csv_filename
-                
+
                 # Ensure the output directory exists
                 csv_path.parent.mkdir(parents=True, exist_ok=True)
-                
+
                 # Export the DataFrame to CSV
                 result.to_csv(csv_path, index=False)
-                
+
                 # Format the SQL query
-                formatted_query = sqlparse.format(args[0], reindent=True, keyword_case='upper')
-                
+                formatted_query = sqlparse.format(args[0], reindent=True, keyword_case="upper")
+
                 # Append the SQL query and purpose (if provided) as comments to the CSV file
-                with open(csv_path, 'a') as f:
-                    f.write('\n\n')
+                with open(csv_path, "a") as f:
+                    f.write("\n\n")
                     if purpose:
-                        f.write(f'/* Purpose:\n{textwrap.fill(purpose, width=80)}\n*/\n\n')
-                    f.write('/* SQL Query:\n')
-                    for line in formatted_query.split('\n'):
+                        f.write(f"/* Purpose:\n{textwrap.fill(purpose, width=80)}\n*/\n\n")
+                    f.write("/* SQL Query:\n")
+                    for line in formatted_query.split("\n"):
                         wrapped_lines = textwrap.wrap(line, width=80)
                         for wrapped_line in wrapped_lines:
-                            f.write(f'{wrapped_line}\n')
-                    f.write('*/\n')
-                
+                            f.write(f"{wrapped_line}\n")
+                    f.write("*/\n")
+
                 # Create a relative path for the file link
                 relative_path = csv_path.relative_to(Path.cwd())
-                
+
                 # Display the DataFrame
                 display(result)
-                
+
                 # Display a link to the CSV file
-                display(HTML(f'<a href="{relative_path}" target="_blank">Click to download:  <code>{csv_path.name}</code></a>'))
-                
+                display(
+                    HTML(
+                        f'<a href="{relative_path}" target="_blank">Click to download:  <code>{csv_path.name}</code></a>'
+                    )
+                )
+
                 return result
+
             return wrapper
+
         return decorator
+
 
 # Usage example
 # if __name__ == "__main__":
