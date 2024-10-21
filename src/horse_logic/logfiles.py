@@ -400,6 +400,26 @@ class Logfile:
         return f"<Logfile file_name={self.file_name!r}, num_lines={self.num_lines}>"
 
 
+    def insert_record_to_cb_database(self, con, record, table_name):
+        """
+        Insert a Cognitive Bias record (from DataFrame) into the database.
+
+        Args:
+            con: Database connection object
+            record (dict): A dictionary representing a row from the DataFrame
+            table_name (str): The name of the table to insert into
+        """
+        columns = ", ".join(record.keys())
+        placeholders = ", ".join("?" for _ in record)
+        values = list(record.values())
+
+        # Convert dict to JSON string for any dictionary values
+        values = [json.dumps(v) if isinstance(v, dict) else v for v in values]
+
+        query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+        con.execute(query, tuple(values))
+
+
 class Logs:
     def __init__(
         self,
