@@ -1,7 +1,7 @@
 import glob
 import json
 import re
-from dataclasses import dataclass, fields
+from dataclasses import asdict, dataclass, fields
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
@@ -275,7 +275,7 @@ class Logfile:
             return None, None
         return trials, events
 
-    # Direction is now looked up from the Cohort info
+    # Direction is now looked up from the Subject (Cohort) info
 
     # def parse_direction(self, comments):
     #     comment_lower = comments.lower()
@@ -286,12 +286,11 @@ class Logfile:
     #     else:
     #         return None
 
-    def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, List]]:
+
+
+    def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, pd.DataFrame]]:
         file_content_str = "".join(self.file_contents)
-        # direction = self.parse_direction(self.parse_comments())
-        trial_start_pattern = (
-            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
-        )
+        trial_start_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
         trial_start_match = re.search(trial_start_pattern, file_content_str)
 
         if not trial_start_match:
@@ -339,7 +338,6 @@ class Logfile:
                     CriterionCount=float(criterion_count) if criterion_count else None,
                     TrialStartTime=event_datetime,
                     TrialEndTime=event_datetime,
-                    # Direction and SessionType removed from here
                 )
                 trials.append(current_trial)
 
@@ -372,7 +370,13 @@ class Logfile:
             logger.error(f"{self.file_name} contains no data - exclude from analysis.")
             return None
 
-        return {"experiment": experiment, "trials": trials, "responses": responses, "events": events}
+        experiment_df = pd.DataFrame([asdict(experiment)])
+        trials_df = pd.DataFrame([asdict(trial) for trial in trials])
+        responses_df = pd.DataFrame([asdict(response) for response in responses])
+        events_df = pd.DataFrame([asdict(event) for event in events])
+
+        return experiment_df, trials_df, responses_df, events_df
+
 
     def insert_record_to_database(self, con, record):
         table_name = (

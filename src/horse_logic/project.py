@@ -182,9 +182,15 @@ class Project:
     def get_config(self):
         return self.config
 
-    def export_data_to_csv(self, df, filepath, info_message=None, header=None, log_relative_path=True):
+    def export_data(self, df, filepath, export_type, info_message=None, log_relative_path=True):
         filepath = Path(filepath)
-        df.to_csv(filepath, header=header)
+        
+        if export_type == 'csv':
+            df.to_csv(filepath, index=False)
+        elif export_type == 'xlsx':
+            df.to_excel(filepath, index=False)
+        else:
+            raise ValueError(f"Unsupported export type: {export_type}")
         
         if log_relative_path:
             try:
@@ -195,7 +201,7 @@ class Project:
         else:
             path_info = f"Path: {filepath}"
         
-        log_message = f"{len(df)} rows exported to CSV." # {path_info}"
+        log_message = f"{len(df)} rows exported to {export_type.upper()}." # {path_info}"
         if info_message:
             log_message = f"{info_message}. {log_message}"
         
@@ -206,7 +212,14 @@ class Project:
         else:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
-    def create_markdown_link(self, file_path, link_text=None):
+    def export_data_to_csv(self, df, filepath, info_message=None, log_relative_path=True):
+        self.export_data(df, filepath, 'csv', info_message, log_relative_path)
+
+    def export_data_to_xlsx(self, df, filepath, info_message=None, log_relative_path=True):
+        self.export_data(df, filepath, 'xlsx', info_message, log_relative_path)
+
+
+    def create_markdown_link(self, file_path, link_text=None, debug=False):
         file_path = Path(file_path).resolve()  # Get the absolute path
         project_root = self.project_dir.resolve()
         notebooks_dir = project_root / 'notebooks'
@@ -252,8 +265,9 @@ class Project:
         }
 
         display(Markdown(markdown_link))
-        #print(f"Debug info: {debug_info}")  # Use print for debug info
-        return markdown_link, debug_info
+        if debug:
+            print(f"Debug info: {debug_info}")  # Use print for debug info
+        return markdown_link
     
     def export_database_tables(self, output_subdir, output_format="xlsx"):
             output_dir = self.output_dir / output_subdir
