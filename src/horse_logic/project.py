@@ -189,11 +189,11 @@ class Project:
     def get_config(self):
         return self.config
 
-    def export_data(self, df, filepath, export_type, info_message=None, log_relative_path=True):
+    def export_data(self, df, filepath, export_type, info_message=None, log_relative_path=True, include_header=False):
         filepath = Path(filepath)
 
         if export_type == "csv":
-            df.to_csv(filepath, index=False)
+            df.to_csv(filepath, index=False, header=include_header)
         elif export_type == "xlsx":
             df.to_excel(filepath, index=False)
         else:
@@ -219,7 +219,7 @@ class Project:
         else:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
-    def export_data_to_csv(self, df, filepath, info_message=None, log_relative_path=True):
+    def export_data_to_csv(self, df, filepath, info_message=None, log_relative_path=True, include_header=False):
         self.export_data(df, filepath, "csv", info_message, log_relative_path)
 
     def export_data_to_xlsx(
