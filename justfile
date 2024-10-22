@@ -77,6 +77,49 @@ publish_to_public_repo:
     cd "$ORIGINAL_DIR"
     rm -rf public_repo
 
+reset_ghpages:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Store the original directory
+    ORIGINAL_DIR=$(pwd)
+
+    # Render the Quarto project
+    cd notebooks
+    quarto render
+    cd "$ORIGINAL_DIR"
+
+    # Remove existing public_repo directory if it exists
+    rm -rf public_repo
+
+    # Clone the public repo
+    git clone {{PUBLIC_REPO}} public_repo
+    cd public_repo
+
+    # Delete the gh-pages branch locally and remotely
+    git push origin --delete gh-pages || true
+    git branch -D gh-pages || true
+
+    # Create a new gh-pages branch
+    git checkout --orphan gh-pages
+
+    # Remove all files from the working directory
+    git rm -rf .
+
+    # Copy rendered files from notebooks/_site to public repo
+    cp -R "$ORIGINAL_DIR/notebooks/_site/"* .
+
+    # Add, commit, and push changes
+    git add .
+    git commit -m "Reset gh-pages branch"
+    git push origin gh-pages --force
+
+    # Clean up
+    cd "$ORIGINAL_DIR"
+    rm -rf public_repo
+
+    echo "gh-pages branch has been reset and updated with new content."
+
 
 render:
     cd notebooks && quarto render

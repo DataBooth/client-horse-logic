@@ -29,6 +29,9 @@ notebooks/*_files
 *.xlsx
 tmp.txt
 notebooks/public_repo/
+data/parquet/
+notebooks/results/CB/*.csv
+notebooks/results/RPE/*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
