@@ -193,7 +193,7 @@ class Project:
         filepath = Path(filepath)
 
         if export_type == "csv":
-            df.to_csv(filepath, index=False, header=include_header)
+            df.to_csv(filepath, index=True, header=include_header)
         elif export_type == "xlsx":
             df.to_excel(filepath, index=False)
         else:
@@ -371,7 +371,7 @@ class Project:
                 nonlocal csv_filename
                 # Generate a default filename if not provided
                 if csv_filename is None:
-                    timestamp = datetime.now().strftime("%Y%m%d")  # _%H%M%S")
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M")  # %S")
                     func_name = func.__name__
                     csv_filename = f"{func_name}_{timestamp}.csv"
 

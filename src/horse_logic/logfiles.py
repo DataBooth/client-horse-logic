@@ -411,12 +411,14 @@ class Logfile:
             placeholders.append("?")
 
             if value is None:
-                logger.warning(f"NULL value detected for column '{key}' in table '{table_name}'")
+                if debug:
+                    logger.warning(f"NULL value detected for column '{key}' in table '{table_name}'")
             elif isinstance(value, dict):
                 value = json.dumps(value)
             elif isinstance(value, float) and math.isnan(value):
                 value = "NaN"
-                logger.warning(f"NaN value detected for column '{key}' in table '{table_name}'")
+                if debug:
+                    logger.warning(f"NaN value detected for column '{key}' in table '{table_name}'")
 
             values.append(value)
 
