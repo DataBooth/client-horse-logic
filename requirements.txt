@@ -10,7 +10,7 @@ contourpy==1.2.1
 cramjam==2.8.3
 cycler==0.12.1
 decorator==5.1.1
-duckdb==1.1.1
+duckdb==1.1.2
 et-xmlfile==1.1.0
 evdev==1.7.1; "linux" in sys_platform
 exceptiongroup==1.2.1; python_version < "3.11"
@@ -55,6 +55,7 @@ pyobjc-framework-cocoa==9.0.1; sys_platform == "darwin"
 pyobjc-framework-quartz==9.0.1; sys_platform == "darwin"
 pyparsing==3.1.2
 python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
 python-xlib==0.33; "linux" in sys_platform
 pytz==2024.1
 regex==2022.3.2
