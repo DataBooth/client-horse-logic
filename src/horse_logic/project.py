@@ -189,7 +189,9 @@ class Project:
     def get_config(self):
         return self.config
 
-    def export_data(self, df, filepath, export_type, info_message=None, log_relative_path=True, include_header=False):
+    def export_data(
+        self, df, filepath, export_type, info_message=None, log_relative_path=True, include_header=False
+    ):
         filepath = Path(filepath)
 
         if export_type == "csv":
@@ -219,7 +221,9 @@ class Project:
         else:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
 
-    def export_data_to_csv(self, df, filepath, info_message=None, log_relative_path=True, include_header=False):
+    def export_data_to_csv(
+        self, df, filepath, info_message=None, log_relative_path=True, include_header=False
+    ):
         self.export_data(df, filepath, "csv", info_message, log_relative_path)
 
     def export_data_to_xlsx(
@@ -415,7 +419,7 @@ class Project:
                 # Display a link to the CSV file
                 display(
                     HTML(
-                        f'<a href="{relative_path}" target="_blank">Click to download:  <code>{csv_path.name}</code></a>'
+                        f'<a href="{relative_path}" target="_blank">Click to download:  <code>{csv_path.name}</code></a><p></p>'
                     )
                 )
 
