@@ -4,7 +4,7 @@ project:
   # See .quartoignore for ignored files
   render:
     - "*.qmd"
-    - "*.ipynb"
+    - "*CB*.ipynb"
     - "!ignored.qmd"
     - "!ignored-dir/"
     - "!upload-to-motherduck.ipynb"
@@ -12,6 +12,9 @@ project:
     - "!archive-analysis/"
     - "!archive-experiment/"
     - "!background/" 
+    - "!database-checks-CB.ipynb"
+    - "!parquet-to-motherduck.ipynb"
+
 
 website:
   navbar:
