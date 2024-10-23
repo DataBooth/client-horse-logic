@@ -36,7 +36,7 @@ CREATE OR REPLACE TABLE ExperimentCBs (
 --     TrialSubType: str
 --     Direction: str
 --     CriterionType: Optional[str]
---     CriterionCount: Optional[float]
+--     CriterionCount: Optional[int]
 --     TrialStartTime: datetime
 --     TrialEndTime: datetime
 --     SessionType: str  # New field: "training" or "test"
@@ -49,7 +49,7 @@ CREATE OR REPLACE TABLE TrialCBs (
     ResponseType VARCHAR,
     TrialSubType VARCHAR,
     CriterionType VARCHAR,
-    CriterionCount DOUBLE,
+    CriterionCount INTEGER,
     TrialStartTime TIMESTAMP,
     TrialEndTime TIMESTAMP,
     FOREIGN KEY (ExperimentID) REFERENCES ExperimentCBs (ExperimentID)

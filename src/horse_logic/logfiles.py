@@ -74,7 +74,7 @@ class TrialCB:
     ResponseType: str
     TrialSubType: str
     CriterionType: Optional[str]
-    CriterionCount: Optional[float]
+    CriterionCount: Optional[int]
     TrialStartTime: datetime
     TrialEndTime: datetime
     # Direction and SessionType fields removed
@@ -335,7 +335,7 @@ class Logfile:
                     ResponseType=response_type,
                     TrialSubType=trial_sub_type,
                     CriterionType=criterion_type if criterion_count else None,
-                    CriterionCount=float(criterion_count) if criterion_count else None,
+                    CriterionCount=int(criterion_count) if criterion_count else 0,
                     TrialStartTime=event_datetime,
                     TrialEndTime=event_datetime,
                 )
