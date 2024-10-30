@@ -2,6 +2,7 @@ import functools
 import sys
 import textwrap
 import urllib.parse
+from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -179,6 +180,110 @@ class Project:
             self._db_connection.close()
             self._db_connection = None
             logger.info("Database connection closed")
+
+    def list_database_objects(self, sort_by="alphabetical"):
+        con = self.get_db_connection()
+
+        # Get list of tables and views
+        objects = con.sql(
+            """
+            SELECT table_name as name, table_type as type
+            FROM information_schema.tables
+            WHERE table_schema = 'main'
+            ORDER BY table_name
+        """
+        ).fetchall()
+
+        # Get object sizes and creation order
+        object_info = []
+        dependencies = defaultdict(list)
+        for i, (name, obj_type) in enumerate(objects):
+            # Get row count
+            row_count = con.sql(f"SELECT COUNT(*) FROM {name}").fetchone()[0]
+
+            # Get column count
+            col_count = con.sql(
+                f"SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{name}'"
+            ).fetchone()[0]
+
+            # Check for dependencies (only for views)
+            if obj_type.lower() == "view":
+                view_definition = con.sql(
+                    f"SELECT sql FROM sqlite_master WHERE name = '{name}'"
+                ).fetchone()[0]
+                for other_name, _ in objects:
+                    if other_name != name and other_name.lower() in view_definition.lower():
+                        dependencies[name].append(other_name)
+
+            object_info.append(
+                {
+                    "name": name,
+                    "type": obj_type,
+                    "rows": row_count,
+                    "columns": col_count,
+                    "creation_order": i,
+                    "dependencies": dependencies[name],
+                }
+            )
+
+        # Sort objects
+        if sort_by == "creation":
+            object_info.sort(key=lambda x: x["creation_order"])
+        else:  # alphabetical
+            object_info.sort(key=lambda x: x["name"])
+
+        # Format and display results
+        print(f"{'Name':<30} {'Type':<15} {'Size':<15} {'Dependencies'}")
+        print("-" * 80)
+        for obj in object_info:
+            size = f"{obj['rows']} x {obj['columns']}"
+            deps = ", ".join(obj["dependencies"]) if obj["dependencies"] else "None"
+            print(f"{obj['name']:<30} {obj['type']:<15} {size:<15} {deps}")
+
+        # return object_info
+
+    def drop_all_views(self):
+        con = self.get_db_connection()
+
+        # Get the DROP VIEW statements
+        drop_statements = con.sql(
+            """
+            SELECT 'DROP VIEW IF EXISTS ' || table_name || ';' AS drop_statement
+            FROM information_schema.tables
+            WHERE table_schema = 'main' AND table_type = 'VIEW';
+        """
+        ).fetchall()
+
+        # Execute each DROP VIEW statement
+        for statement in drop_statements:
+            con.sql(statement[0])
+
+        print(f"Dropped {len(drop_statements)} views.")
+
+    def drop_all_tables_except_defaults(
+        self, default_tables=["ExperimentCBs", "TrialCBs", "ResponseCBs", "EventCBs"]
+    ):
+        con = self.get_db_connection()
+
+        # Get all tables
+        all_tables = con.sql(
+            """
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'main' AND table_type = 'BASE TABLE'
+        """
+        ).fetchall()
+
+        # Generate DROP TABLE statements for non-default tables
+        drop_statements = [
+            f"DROP TABLE IF EXISTS {table[0]};" for table in all_tables if table[0] not in default_tables
+        ]
+
+        # Execute each DROP TABLE statement
+        for statement in drop_statements:
+            con.sql(statement)
+
+        print(f"Dropped {len(drop_statements)} non-default tables.")
 
     def __del__(self):
         self.close_db_connection()
@@ -358,6 +463,18 @@ class Project:
                 raise ValueError(f"Unsupported output format: {output_format}")
         except Exception as e:
             logger.error(f"Error exporting database tables: {e}")
+
+    def view_and_export_table(self, table_name):
+        con = self.get_db_connection()
+        tables = con.sql("SHOW TABLES;").fetchall()
+        if table_name in [table[0] for table in tables]:
+            df = con.sql(f"SELECT * FROM {table_name}").df()
+            filepath = self.output_dir / f"{table_name}.xlsx"
+            self.export_data_to_xlsx(df, filepath=filepath, info_message=f"Exported table: {table_name}")
+            display(Markdown(f"### Table: {table_name}"))
+            display(df)
+        else:
+            print(f"Table '{table_name}' does not exist in the database.")
 
     def display_file_with_highlighting(self, relative_path):
         full_path = self.project_dir / relative_path
