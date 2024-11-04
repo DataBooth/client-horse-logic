@@ -1,24 +1,22 @@
 ```
 .
-├── ERD.docx
-├── ERD.ipynb
 ├── README.md
 ├── data
 │   └── results
 │       ├── CB
 │       ├── RPE
-│       │   └── export_tables
 │       └── zips
 │           ├── cb_data
 │           └── data_17Jan2020_email_hillydale_equine
 ├── docs
+│   ├── CB-logfile-example-parsing.md
+│   ├── ERD_cog_bias.ipynb
 │   ├── README_Python_setup.md
 │   ├── README_data_logging.md
 │   ├── README_experiment.md
 │   ├── README_experiment_types.md
 │   ├── background_info.md
 │   ├── complete_directory_structure.md
-│   ├── draft_words_paper.md
 │   ├── experiment_directory_structure.md
 │   ├── from_CH
 │   │   ├── 1Button_manual_testcode.py
@@ -63,39 +61,24 @@
 │   │       ├── Exp method for Wagga.docx
 │   │       └── Exp method for Wagga.md
 │   ├── hardware.md
+│   ├── high_level_data_analysis_diagram.ipynb
 │   ├── images
 │   │   ├── Whiteboard_14July2023_Page1.jpeg
 │   │   └── Whiteboard_14July2023_Page2.jpeg
+│   ├── method_paper.docx
+│   ├── method_paper.md
 │   ├── output
-│   ├── pdf_output
-│   ├── tmp.ipynb
-│   └── tmp_files
-│       ├── figure-pdf
-│       └── libs
-│           ├── bootstrap
-│           │   ├── bootstrap-icons.css
-│           │   ├── bootstrap-icons.woff
-│           │   ├── bootstrap.min.css
-│           │   └── bootstrap.min.js
-│           ├── clipboard
-│           │   └── clipboard.min.js
-│           ├── quarto-diagram
-│           │   ├── mermaid-init.js
-│           │   ├── mermaid.css
-│           │   └── mermaid.min.js
-│           └── quarto-html
-│               ├── anchor.min.js
-│               ├── popper.min.js
-│               ├── quarto-syntax-highlighting.css
-│               ├── quarto.js
-│               ├── tippy.css
-│               └── tippy.umd.min.js
+│   └── pdf_output
 ├── justfile
-├── method.docx
+├── justfile.tmp
 ├── notebooks
+│   ├── CSU-database-queries-CB-deep-dive.ipynb
+│   ├── HD-database-queries-CB-deep-dive.ipynb
 │   ├── OCR-tests
 │   │   ├── pred-exp-worksheet-initial-parse.ipynb
 │   │   └── try-tesseract-ocr.ipynb
+│   ├── _quarto.yml
+│   ├── about.qmd
 │   ├── archive-analysis
 │   │   ├── create-duckdb-sql.ipynb
 │   │   ├── data-table-xl-test.ipynb
@@ -108,7 +91,8 @@
 │   │   ├── testing-log-parameters.ipynb
 │   │   ├── testing_experiment_subjects.ipynb
 │   │   ├── testing_experiment_tracking.ipynb
-│   │   └── try-create-duckdb-orm.ipynb
+│   │   ├── try-create-duckdb-orm.ipynb
+│   │   └── upload-to-motherduck.ipynb
 │   ├── archive-experiment
 │   │   ├── analyse_sensor_data.ipynb
 │   │   ├── base_experiment_testing.ipynb
@@ -120,39 +104,32 @@
 │   │   └── verify_dataclass_definitions.ipynb
 │   ├── background
 │   │   └── analyse-sample-results.ipynb
-│   ├── database-queries.ipynb
-│   ├── example-database-queries.ipynb
+│   ├── corrections-to-database-CB.ipynb
+│   ├── database-checks-CB.ipynb
+│   ├── database-queries-CB.ipynb
+│   ├── database-queries-RPE.ipynb
+│   ├── index.qmd
 │   ├── logfile-reconciliation-CB.ipynb
 │   ├── logfile-reconciliation-RPE.ipynb
 │   ├── logfile-to-database-CB.ipynb
 │   ├── logfile-to-database-RPE.ipynb
 │   ├── notebook_helper.py
 │   ├── parse
-│   ├── quarto_output
-│   │   └── logfile-reconciliation-CB_files
-│   │       └── libs
-│   │           ├── bootstrap
-│   │           │   ├── bootstrap-icons.css
-│   │           │   ├── bootstrap-icons.woff
-│   │           │   ├── bootstrap.min.css
-│   │           │   └── bootstrap.min.js
-│   │           ├── clipboard
-│   │           │   └── clipboard.min.js
-│   │           └── quarto-html
-│   │               ├── anchor.min.js
-│   │               ├── popper.min.js
-│   │               ├── quarto-syntax-highlighting.css
-│   │               ├── quarto.js
-│   │               ├── tippy.css
-│   │               └── tippy.umd.min.js
-│   └── upload-to-motherduck.ipynb
+│   ├── push-to-motherduck-workaround.ipynb
+│   └── results
+│       ├── CB
+│       │   └── export_tables
+│       └── RPE
+│           └── export_tables
 ├── output
 ├── pdm.lock
+├── project_config.yaml
 ├── pyproject.toml
 ├── requirements.txt
 ├── sql
 │   ├── README_database_design.md
 │   ├── check_insert.sql
+│   ├── correction-table-views.sql
 │   ├── create_cb_experiment_tables_ddb.sql
 │   ├── create_experiment_tables_ddb.sql
 │   ├── erd.mermaid
@@ -172,9 +149,13 @@
     ├── experiment_sounds.py
     ├── horse_logic
     │   ├── __init__.py
+    │   ├── database_INPROGRESS.py
     │   ├── logfiles.py
     │   ├── logfiles_README.md
+    │   ├── logfiles_refactored_example_only.py
     │   ├── motherduck.py
+    │   ├── project.py
+    │   ├── subject.py
     │   ├── utils.py
     │   └── utils_README.md
     ├── oo-approach
