@@ -19,20 +19,12 @@ ALTER TABLE Corrections DROP COLUMN CurrentValue;
 
 CREATE OR REPLACE VIEW CorrectionsSplit AS
 SELECT 
-    Cohort,
-    ExperimentDate,
-    SessionType,
-    SubjectName,
-    TrialNumber,
-    TrialType,
-    ResponseTime,
-    ResponseType,
-    Comment,
-    LogFilename,
+    *,
     TRIM(UNNEST(STRING_TO_ARRAY(CorrectTable, ','))) AS TableToCorrect,
     TRIM(UNNEST(STRING_TO_ARRAY(CorrectField, ','))) AS FieldToCorrect,
     TRIM(UNNEST(STRING_TO_ARRAY(CorrectValue, ','))) AS ValueToCorrect
 FROM Corrections;
+
 
 CREATE OR REPLACE VIEW CorrectionWithExistingValues AS
 SELECT 
@@ -64,55 +56,72 @@ LEFT JOIN TrialCBs t ON e.ExperimentID = t.ExperimentID AND sc.TrialNumber = t.T
 LEFT JOIN ResponseCBs r ON t.TrialID = r.TrialID
 WHERE 
     (sc.TableToCorrect = 'TrialCBs' AND sc.FieldToCorrect = 'ResponseType')
-    OR (sc.TableToCorrect = 'ResponseCBs' AND sc.FieldToCorrect = 'ResponseTime')
+    OR (sc.TableToCorrect = 'ResponseCBs' AND sc.FieldToCorrect = 'ResponseTime');
 
 
 CREATE OR REPLACE VIEW ExperimentCBsCorrected AS
-WITH NewExperiments AS (
-    SELECT DISTINCT
-        c.LogFilename,
+WITH FirstComments AS (
+    SELECT 
+        LogFilename,
+        FIRST_VALUE(Comment) OVER (
+            PARTITION BY LogFilename 
+            ORDER BY TrialNumber
+        ) AS FirstComment
+    FROM Corrections
+),
+NewExperiments AS (
+    SELECT DISTINCT 
         c.Cohort,
         c.ExperimentDate,
         c.SessionType,
-        c.SubjectName
-    FROM 
-        Corrections c
-    LEFT JOIN 
-        ExperimentCBs e ON c.LogFilename = e.LogFileName
-    WHERE 
-        e.LogFileName IS NULL
+        c.SubjectName,
+        c.LogFilename,
+        fc.FirstComment AS Comment,
+        'Corrections xlsx: ADD' AS DataSource
+    FROM Corrections c
+    LEFT JOIN ExperimentCBs e ON c.LogFilename = e.LogFileName
+    LEFT JOIN FirstComments fc ON c.LogFilename = fc.LogFilename
+    WHERE e.LogFileName IS NULL
 ),
 MaxExperimentID AS (
     SELECT COALESCE(MAX(ExperimentID), 0) AS MaxID
     FROM ExperimentCBs
 )
 SELECT 
-    e.ExperimentID,
-    e.Cohort,
-    e.DateTime,
-    e.SessionType,
-    e.SubjectName,
-    e.LogFileName,
+    ExperimentID,
+    Cohort,
+    DateTime,
+    SessionType,
+    SubjectName,
+    SubjectNumber,
+    SessionNumber,
+    ExperimentType,
+    Direction,
+    Comment,
+    LogFileName,
+    Parameters,
     'ExperimentCBs' AS DataSource
-FROM 
-    ExperimentCBs e
+FROM ExperimentCBs
 
 UNION ALL
 
 SELECT 
-    ROW_NUMBER() OVER (ORDER BY ne.LogFilename) + m.MaxID AS ExperimentID,
-    ne.Cohort,
-    CAST(ne.ExperimentDate AS TIMESTAMP) AS DateTime,
-    ne.SessionType,
-    ne.SubjectName,
-    ne.LogFilename AS LogFileName,
-    'Corrections xlsx: ADD' AS DataSource
-FROM 
-    NewExperiments ne
-CROSS JOIN 
-    MaxExperimentID m
-ORDER BY 
-    ExperimentID;
+    ROW_NUMBER() OVER (ORDER BY LogFilename) + m.MaxID AS ExperimentID,
+    Cohort,
+    CAST(ExperimentDate AS TIMESTAMP) AS DateTime,
+    SessionType,
+    SubjectName,
+    NULL AS SubjectNumber,
+    NULL AS SessionNumber,
+    NULL AS ExperimentType,
+    NULL AS Direction,
+    Comment,
+    LogFilename AS LogFileName,
+    NULL::JSON AS Parameters,
+    DataSource
+FROM NewExperiments
+CROSS JOIN MaxExperimentID m
+ORDER BY ExperimentID;
 
 
 CREATE OR REPLACE VIEW TrialCBsCorrected AS
@@ -123,10 +132,14 @@ WITH NewTrials AS (
         c.TrialNumber,
         c.TrialType AS TrialSubType,
         c.ResponseType,
-        'Criterion' AS CriterionType, -- You may need to adjust this if you have this information
-        0 AS CriterionCount, -- You may need to adjust this if you have this information
-        NULL AS TrialStartTime, -- You may need to adjust this if you have this information
-        NULL AS TrialEndTime, -- You may need to adjust this if you have this information
+        CASE 
+            WHEN c.TrialType = 'P' AND c.ResponseType = 'GO' THEN 'positive'
+            WHEN c.TrialType = 'N' AND c.ResponseType = 'NOGO' THEN 'negative'
+            ELSE NULL
+        END AS CriterionType,
+        NULL AS CriterionCount, -- We'll calculate this in the final query
+        NULL AS TrialStartTime,
+        NULL AS TrialEndTime,
         'Added from Corrections' AS CorrectedFlag
     FROM 
         Corrections c
@@ -157,23 +170,41 @@ ExistingTrials AS (
         AND t.TrialNumber = cs.TrialNumber
         AND cs.TableToCorrect = 'TrialCBs'
         AND cs.FieldToCorrect = 'ResponseType'
+),
+AllTrials AS (
+    SELECT * FROM ExistingTrials
+    UNION ALL
+    SELECT * FROM NewTrials
+),
+TrialsWithCriterionCount AS (
+    SELECT 
+        *,
+        SUM(CASE 
+            WHEN CriterionType IS NOT NULL THEN 1 
+            ELSE 0 
+        END) OVER (
+            PARTITION BY ExperimentID, CriterionType
+            ORDER BY TrialNumber
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS CalculatedCriterionCount,
+        ROW_NUMBER() OVER (
+            PARTITION BY ExperimentID
+            ORDER BY TrialNumber
+        ) AS RowNum
+    FROM AllTrials
 )
 SELECT 
-    COALESCE(TrialID, ROW_NUMBER() OVER (ORDER BY ExperimentID, TrialNumber) + (SELECT MAX(TrialID) FROM TrialCBs)) AS TrialID,
+    COALESCE(TrialID, RowNum + (SELECT MAX(TrialID) FROM TrialCBs)) AS TrialID,
     ExperimentID,
     TrialNumber,
     TrialSubType,
     ResponseType,
     CriterionType,
-    CriterionCount,
+    CASE WHEN CriterionType IS NOT NULL THEN CalculatedCriterionCount ELSE 0 END AS CriterionCount,
     TrialStartTime,
     TrialEndTime,
     CorrectedFlag
-FROM (
-    SELECT * FROM ExistingTrials
-    UNION ALL
-    SELECT * FROM NewTrials
-) AllTrials
+FROM TrialsWithCriterionCount
 ORDER BY ExperimentID, TrialNumber;
 
 
@@ -229,8 +260,7 @@ FROM (
     UNION ALL
     SELECT * FROM NewResponses
 ) AllResponses
-ORDER BY TrialID;
-
+ORDER BY ResponseID;
 
 
 CREATE OR REPLACE VIEW EventCBsCorrected AS
@@ -267,3 +297,21 @@ FULL OUTER JOIN NewTrialEvents nte ON ev.TrialID = nte.TrialID
 ORDER BY 
     TrialID, ev.EventTime;
 
+
+CREATE OR REPLACE VIEW SubjectCBs AS
+WITH SubjectInfo AS (
+    SELECT 
+        SubjectName,
+        Cohort,
+        MAX(SubjectNumber) AS SubjectNumber,
+        COUNT(DISTINCT ExperimentID) AS TotalExperiments
+    FROM ExperimentCBsCorrected
+    GROUP BY SubjectName, Cohort
+)
+SELECT 
+    SubjectName,
+    COALESCE(SubjectNumber, 0) AS SubjectNumber,
+    Cohort,
+    TotalExperiments
+FROM SubjectInfo
+ORDER BY SubjectName;
