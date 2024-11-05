@@ -465,6 +465,50 @@ class Project:
         except Exception as e:
             logger.error(f"Error exporting database tables: {e}")
 
+    def low_cardinality_report(self, table_name, max_cardinality=5, export=True):
+        con = self.get_db_connection()
+        
+        # First, get the column names
+        columns_query = f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}'"
+        columns = con.execute(columns_query).df()['column_name'].tolist()
+        
+        # Then, for each column, count distinct values
+        results = []
+        for column in columns:
+            query = f"""
+            SELECT 
+                '{column}' AS column_name,
+                -- COUNT(DISTINCT "{column}") AS distinct_count,
+                -- STRING_AGG(DISTINCT CAST("{column}" AS VARCHAR), ', ') AS unique_values
+                COUNT(DISTINCT CASE WHEN column_value IS NULL THEN 'NULL' 
+                                    WHEN column_value = '' THEN 'EMPTY' 
+                                    ELSE column_value END) AS distinct_count,
+                STRING_AGG(DISTINCT CASE WHEN column_value IS NULL THEN 'NULL' 
+                                        WHEN column_value = '' THEN 'EMPTY' 
+                                        ELSE column_value END, ', ') AS unique_values
+            FROM {table_name}
+            """
+            result = con.execute(query).df()
+            if result['distinct_count'][0] <= max_cardinality:
+                results.append(result)
+        
+        if not results:
+            print(f"No columns with cardinality <= {max_cardinality} found in table '{table_name}'.")
+            return None
+        
+        result_df = pd.concat(results, ignore_index=True)
+        result_df = result_df.sort_values('distinct_count')
+        
+        display(Markdown(f"## Low Cardinality Report for '{table_name}'"))
+        display(result_df)
+        
+        if export:
+            filepath = self.output_dir / f"{table_name}_low_cardinality_report.xlsx"
+            self.export_data_to_xlsx(result_df, filepath=filepath, 
+                                    info_message=f"Exported low cardinality report for table: {table_name}")
+        
+        return result_df
+
     def view_and_export_table(self, table_name):
         con = self.get_db_connection()
         tables = con.sql("SHOW TABLES;").fetchall()
@@ -474,6 +518,12 @@ class Project:
             self.export_data_to_xlsx(df, filepath=filepath, info_message=f"Exported table: {table_name}")
             display(Markdown(f"### Table: {table_name}"))
             display(df)
+            
+            # Generate and display low cardinality report
+            low_card_df = self.low_cardinality_report(table_name, export=False)
+            if low_card_df is not None and not low_card_df.empty:
+                display(Markdown("### Low Cardinality Columns"))
+                display(low_card_df)
         else:
             print(f"Table '{table_name}' does not exist in the database.")
 
