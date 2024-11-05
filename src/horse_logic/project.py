@@ -490,7 +490,7 @@ class Project:
             
             # Display the results
             display(Markdown(f"### Query Results: {output_name}"))
-            display(df)
+            #display(df)
             
             return df  # Return the DataFrame for further use if needed
         
