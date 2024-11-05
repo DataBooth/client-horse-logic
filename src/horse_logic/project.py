@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 import duckdb
+import git
 import itables.options as opt
 import pandas as pd
 import sqlparse
@@ -476,6 +477,37 @@ class Project:
         else:
             print(f"Table '{table_name}' does not exist in the database.")
 
+
+    def view_and_export_sql(self, sql_query, output_name):
+        con = self.get_db_connection()
+        try:
+            # Execute the SQL query
+            df = con.sql(sql_query).df()
+            
+            # Export the results to an Excel file
+            filepath = self.output_dir / f"{output_name}.xlsx"
+            self.export_data_to_xlsx(df, filepath=filepath, info_message=f"Exported query results: {output_name}")
+            
+            # Display the results
+            display(Markdown(f"### Query Results: {output_name}"))
+            display(df)
+            
+            return df  # Return the DataFrame for further use if needed
+        
+        except duckdb.Error as e:
+            error_message = f"DuckDB Error: {str(e)}"
+            display(Markdown(f"### Error in SQL Query"))
+            display(Markdown(f"```sql\n{sql_query}\n```"))
+            display(Markdown(f"**Error Message:** {error_message}"))
+            return None
+        
+        except Exception as e:
+            error_message = f"Unexpected Error: {str(e)}"
+            display(Markdown(f"### Error in SQL Query"))
+            display(Markdown(f"```sql\n{sql_query}\n```"))
+            display(Markdown(f"**Error Message:** {error_message}"))
+            return None
+    
     def display_file_with_highlighting(self, relative_path):
         full_path = self.project_dir / relative_path
         with open(full_path, "r") as file:
@@ -545,6 +577,34 @@ class Project:
             return wrapper
 
         return decorator
+
+
+    def get_github_repo(self):
+        try:
+            
+            repo = git.Repo(self.project_dir, search_parent_directories=True)
+            remote_url = repo.remotes.origin.url
+            
+            # Extract the GitHub repo name from the remote URL
+            if "github.com" in remote_url:
+                # Handle SSH and HTTPS URLs
+                if remote_url.startswith("git@github.com:"):
+                    repo_name = remote_url.split(":")[1].rstrip(".git")
+                else:
+                    repo_name = remote_url.split("github.com/")[1].rstrip(".git")
+                
+                return f"https://github.com/{repo_name}"
+            else:
+                return None
+        except ImportError:
+            logger.warning("GitPython is not installed. Unable to retrieve GitHub repository information.")
+            return None
+        except git.exc.InvalidGitRepositoryError:
+            logger.info("The project directory is not a Git repository.")
+            return None
+        except Exception as e:
+            logger.error(f"Error retrieving GitHub repository: {str(e)}")
+            return None
 
 
 # Usage example
