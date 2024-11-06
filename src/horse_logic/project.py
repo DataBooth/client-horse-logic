@@ -6,6 +6,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import duckdb
 import git
@@ -465,48 +466,100 @@ class Project:
         except Exception as e:
             logger.error(f"Error exporting database tables: {e}")
 
-    def low_cardinality_report(self, table_name, max_cardinality=5, export=True):
+    def low_cardinality_report(
+        self, table_name: str, max_cardinality: int = 5, export: bool = True, display_in_method: bool = False
+    ) -> Optional[pd.DataFrame]:
+        """
+        Generate a report of low cardinality columns for a given table.
+
+        This method analyzes the specified table and produces a report of columns
+        with low cardinality (i.e., columns with a small number of unique values).
+        It counts the occurrences of each unique value, including NULL and empty values,
+        and presents the results in a formatted table.
+
+        Parameters:
+        -----------
+        table_name : str
+            The name of the table to analyze.
+        max_cardinality : int, optional
+            The maximum number of unique values for a column to be considered
+            low cardinality. Default is 5.
+        export : bool, optional
+            Whether to export the results to an Excel file. Default is True.
+
+        Returns:
+        --------
+        Optional[pd.DataFrame]
+            A DataFrame containing the low cardinality report, or None if no
+            low cardinality columns are found.
+
+        Raises:
+        -------
+        Exception
+            If there's an error executing the SQL query or processing the results.
+
+        Notes:
+        ------
+        - The method uses DuckDB to execute SQL queries on the specified table.
+        - NULL values are represented as 'NULL' in the output.
+        - Empty strings are represented as 'EMPTY' in the output.
+        - The report includes the column name, number of distinct values, and
+          a list of unique values with their counts.
+        - If export is True, the report is saved as an Excel file in the project's
+          output directory.
+        """
         con = self.get_db_connection()
-        
+
         # First, get the column names
-        columns_query = f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}'"
-        columns = con.execute(columns_query).df()['column_name'].tolist()
-        
-        # Then, for each column, count distinct values
+        columns_query = (
+            f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}'"
+        )
+        columns = con.execute(columns_query).df()["column_name"].tolist()
+
+        # Then, for each column, count distinct values and their occurrences
         results = []
         for column in columns:
             query = f"""
+            WITH value_counts AS (
+                SELECT 
+                    CASE 
+                        WHEN "{column}" IS NULL THEN 'NULL'
+                        WHEN CAST("{column}" AS VARCHAR) = '' THEN 'EMPTY'
+                        ELSE CAST("{column}" AS VARCHAR)
+                    END AS value,
+                    COUNT(*) AS count
+                FROM {table_name}
+                GROUP BY 1
+            )
             SELECT 
                 '{column}' AS column_name,
-                -- COUNT(DISTINCT "{column}") AS distinct_count,
-                -- STRING_AGG(DISTINCT CAST("{column}" AS VARCHAR), ', ') AS unique_values
-                COUNT(DISTINCT CASE WHEN column_value IS NULL THEN 'NULL' 
-                                    WHEN column_value = '' THEN 'EMPTY' 
-                                    ELSE column_value END) AS distinct_count,
-                STRING_AGG(DISTINCT CASE WHEN column_value IS NULL THEN 'NULL' 
-                                        WHEN column_value = '' THEN 'EMPTY' 
-                                        ELSE column_value END, ', ') AS unique_values
-            FROM {table_name}
+                COUNT(*) AS distinct_count,
+                STRING_AGG(value || ' (' || count || ')', ', ' ORDER BY count DESC) AS unique_values_with_counts
+            FROM value_counts
             """
             result = con.execute(query).df()
-            if result['distinct_count'][0] <= max_cardinality:
+            if result["distinct_count"][0] <= max_cardinality:
                 results.append(result)
-        
+
         if not results:
             print(f"No columns with cardinality <= {max_cardinality} found in table '{table_name}'.")
             return None
-        
+
         result_df = pd.concat(results, ignore_index=True)
-        result_df = result_df.sort_values('distinct_count')
-        
-        display(Markdown(f"## Low Cardinality Report for '{table_name}'"))
-        display(result_df)
-        
+        result_df = result_df.sort_values("distinct_count")
+
+        if display_in_method:
+            display(Markdown(f"## Low Cardinality Report for '{table_name}'"))
+            display(result_df)
+
         if export:
             filepath = self.output_dir / f"{table_name}_low_cardinality_report.xlsx"
-            self.export_data_to_xlsx(result_df, filepath=filepath, 
-                                    info_message=f"Exported low cardinality report for table: {table_name}")
-        
+            self.export_data_to_xlsx(
+                result_df,
+                filepath=filepath,
+                info_message=f"Exported low cardinality report for table: {table_name}",
+            )
+
         return result_df
 
     def view_and_export_table(self, table_name):
@@ -518,46 +571,49 @@ class Project:
             self.export_data_to_xlsx(df, filepath=filepath, info_message=f"Exported table: {table_name}")
             display(Markdown(f"### Table: {table_name}"))
             display(df)
-            
+
             # Generate and display low cardinality report
             low_card_df = self.low_cardinality_report(table_name, export=False)
             if low_card_df is not None and not low_card_df.empty:
-                display(Markdown("### Low Cardinality Columns"))
-                display(low_card_df)
+                display(Markdown(f"#### Low Cardinality columns for {table_name}"))
+            # Set display options to prevent wrapping
+                with pd.option_context('display.max_colwidth', None, 'display.width', None):
+                    display(low_card_df)
         else:
             print(f"Table '{table_name}' does not exist in the database.")
-
 
     def view_and_export_sql(self, sql_query, output_name):
         con = self.get_db_connection()
         try:
             # Execute the SQL query
             df = con.sql(sql_query).df()
-            
+
             # Export the results to an Excel file
             filepath = self.output_dir / f"{output_name}.xlsx"
-            self.export_data_to_xlsx(df, filepath=filepath, info_message=f"Exported query results: {output_name}")
-            
+            self.export_data_to_xlsx(
+                df, filepath=filepath, info_message=f"Exported query results: {output_name}"
+            )
+
             # Display the results
             display(Markdown(f"### Query Results: {output_name}"))
-            #display(df)
-            
+            # display(df)
+
             return df  # Return the DataFrame for further use if needed
-        
+
         except duckdb.Error as e:
             error_message = f"DuckDB Error: {str(e)}"
             display(Markdown(f"### Error in SQL Query"))
             display(Markdown(f"```sql\n{sql_query}\n```"))
             display(Markdown(f"**Error Message:** {error_message}"))
             return None
-        
+
         except Exception as e:
             error_message = f"Unexpected Error: {str(e)}"
             display(Markdown(f"### Error in SQL Query"))
             display(Markdown(f"```sql\n{sql_query}\n```"))
             display(Markdown(f"**Error Message:** {error_message}"))
             return None
-    
+
     def display_file_with_highlighting(self, relative_path):
         full_path = self.project_dir / relative_path
         with open(full_path, "r") as file:
@@ -628,13 +684,12 @@ class Project:
 
         return decorator
 
-
     def get_github_repo(self):
         try:
-            
+
             repo = git.Repo(self.project_dir, search_parent_directories=True)
             remote_url = repo.remotes.origin.url
-            
+
             # Extract the GitHub repo name from the remote URL
             if "github.com" in remote_url:
                 # Handle SSH and HTTPS URLs
@@ -642,12 +697,14 @@ class Project:
                     repo_name = remote_url.split(":")[1].rstrip(".git")
                 else:
                     repo_name = remote_url.split("github.com/")[1].rstrip(".git")
-                
+
                 return f"https://github.com/{repo_name}"
             else:
                 return None
         except ImportError:
-            logger.warning("GitPython is not installed. Unable to retrieve GitHub repository information.")
+            logger.warning(
+                "GitPython is not installed. Unable to retrieve GitHub repository information."
+            )
             return None
         except git.exc.InvalidGitRepositoryError:
             logger.info("The project directory is not a Git repository.")
