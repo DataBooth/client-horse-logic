@@ -9,8 +9,10 @@ listing:
     - logfile-to-database-CB.ipynb
     - database-queries-CB.ipynb
     - corrections-to-database-CB.ipynb
+    -  database-apply-corrections-CB.ipynb
     - CSU-database-queries-CB-deep-dive.ipynb
     - HD-database-queries-CB-deep-dive.ipynb
+
   
   sort: false
   type: default

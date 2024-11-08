@@ -262,7 +262,7 @@ class Project:
         logger.info(f"Dropped {len(views)} views.")
 
     def drop_all_tables_except_defaults(
-        self, default_tables=["ExperimentCBs", "TrialCBs", "ResponseCBs", "EventCBs"]
+        self, default_tables=["ExperimentCBs", "TrialCBs", "ResponseCBs", "EventCBs", "SubjectCBs", "Corrections"]
     ):
         with self.db_connection() as con:
             # Get all tables in the main schema
