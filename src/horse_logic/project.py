@@ -39,6 +39,8 @@ class Project:
         self._initialise_directories()
         self._initialise_database(delete_existing_db)
         logger.info(f"Project initialised ({experiment_type}): config defined in {config_file}")
+        logger.info(f"GitHub repo: {self.get_github_repo()}")
+
 
     def _find_project_root(self):
         current_dir = Path.cwd()
@@ -245,47 +247,40 @@ class Project:
         # return object_info
 
     def drop_all_views(self):
-        con = self.get_db_connection()
+        with self.db_connection() as con:
+            # Get all views in the main schema
+            views = con.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'main' AND table_type = 'VIEW'
+            """).fetchall()
 
-        # Get the DROP VIEW statements
-        drop_statements = con.sql(
-            """
-            SELECT 'DROP VIEW IF EXISTS ' || table_name || ';' AS drop_statement
-            FROM information_schema.tables
-            WHERE table_schema = 'main' AND table_type = 'VIEW';
-        """
-        ).fetchall()
+            # Drop each view
+            for view in views:
+                con.execute(f"DROP VIEW IF EXISTS {view[0]}")
 
-        # Execute each DROP VIEW statement
-        for statement in drop_statements:
-            con.sql(statement[0])
-
-        print(f"Dropped {len(drop_statements)} views.")
+        logger.info(f"Dropped {len(views)} views.")
 
     def drop_all_tables_except_defaults(
         self, default_tables=["ExperimentCBs", "TrialCBs", "ResponseCBs", "EventCBs"]
     ):
-        con = self.get_db_connection()
+        with self.db_connection() as con:
+            # Get all tables in the main schema
+            tables = con.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'main' AND table_type = 'BASE TABLE'
+            """).fetchall()
 
-        # Get all tables
-        all_tables = con.sql(
-            """
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = 'main' AND table_type = 'BASE TABLE'
-        """
-        ).fetchall()
+            # Drop each table that is not in the default_tables list
+            dropped_count = 0
+            for table in tables:
+                if table[0] not in default_tables:
+                    con.execute(f"DROP TABLE IF EXISTS {table[0]}")
+                    dropped_count += 1
 
-        # Generate DROP TABLE statements for non-default tables
-        drop_statements = [
-            f"DROP TABLE IF EXISTS {table[0]};" for table in all_tables if table[0] not in default_tables
-        ]
+        logger.info(f"Dropped {dropped_count} non-default tables.")
 
-        # Execute each DROP TABLE statement
-        for statement in drop_statements:
-            con.sql(statement)
-
-        print(f"Dropped {len(drop_statements)} non-default tables.")
 
     def __del__(self):
         self.close_db_connection()
