@@ -59,9 +59,10 @@ class Project:
         logger.remove()  # Remove default handler
         logger.add(sys.stderr, format="<level>{level: <8}</level> | <level>{message}</level>")
 
-    def _initialise_itables(self, table_page_length=10):
+    def _initialise_itables(self, table_page_length=10, max_bytes="1MB"):
         init_notebook_mode(all_interactive=True, connected=False)
         opt.pageLength = table_page_length
+        opt.maxBytes = max_bytes
 
     def _initialise_directories(self):
         for name, info in self.config["directories"].items():
