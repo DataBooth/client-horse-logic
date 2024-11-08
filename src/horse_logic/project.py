@@ -334,7 +334,7 @@ class Project:
         self.export_data(df, filepath, "csv", info_message, log_relative_path)
 
     def export_data_to_xlsx(
-        self, data, filepath, sheet_names=None, info_message=None, log_relative_path=True
+        self, data, filepath, sheet_names=None, info_message=None, log_relative_path=True, null_value='NULL'
     ):
         filepath = Path(filepath)
 
@@ -347,7 +347,9 @@ class Project:
         with pd.ExcelWriter(filepath) as writer:
             for i, df in enumerate(data):
                 sheet_name = sheet_names[i] if sheet_names else f"Sheet{i+1}"
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                # Replace NaN values with the specified null_value
+                df_filled = df.fillna(null_value)
+                df_filled.to_excel(writer, sheet_name=sheet_name, index=False)
 
         total_rows = sum(len(df) for df in data)
         log_message = f"{total_rows} total rows exported to XLSX across {len(data)} sheets."
@@ -370,6 +372,7 @@ class Project:
             self.create_markdown_link(filepath)
         else:
             logger.warning(f"File not found: {filepath}. Markdown link not created.")
+
 
     def create_markdown_link(self, file_path, link_text=None, debug=False):
         file_path = Path(file_path).resolve()  # Get the absolute path
@@ -561,6 +564,71 @@ class Project:
             )
 
         return result_df
+    
+
+
+    def compare_views(self, view1, view2):
+        # Function to get view data and schema
+        con = self.get_db_connection()
+        def get_view_info(view_name):
+            data = con.execute(f"SELECT * FROM {view_name}").fetchdf()
+            schema = con.execute(f"DESCRIBE {view_name}").fetchdf()
+            return data, schema
+
+        # Get data and schema for both views
+        data1, schema1 = get_view_info(view1)
+        data2, schema2 = get_view_info(view2)
+
+        print(f"Comparing views: {view1} and {view2}")
+
+        # Compare row counts
+        print(f"\nRow count comparison:")
+        print(f"{view1}: {len(data1)} rows")
+        print(f"{view2}: {len(data2)} rows")
+        print(f"Row count match: {len(data1) == len(data2)}")
+
+        # Compare schemas
+        print(f"\nSchema comparison:")
+        schema_match = schema1.equals(schema2)
+        print(f"Schemas match: {schema_match}")
+        if not schema_match:
+            print("Differences in schema:")
+            print(pd.concat([schema1, schema2]).drop_duplicates(keep=False))
+
+        # Compare column names
+        print(f"\nColumn comparison:")
+        cols1 = set(data1.columns)
+        cols2 = set(data2.columns)
+        print(f"Columns match: {cols1 == cols2}")
+        if cols1 != cols2:
+            print(f"Columns unique to {view1}: {cols1 - cols2}")
+            print(f"Columns unique to {view2}: {cols2 - cols1}")
+
+        # Compare data
+        if cols1 == cols2:
+            print("\nData comparison:")
+            if data1.equals(data2):
+                print("All data matches exactly.")
+            else:
+                # Find rows that don't match
+                merged = data1.merge(data2, indicator=True, how='outer')
+                diff_rows = merged[merged['_merge'] != 'both']
+                print(f"Number of differing rows: {len(diff_rows)}")
+                
+                if len(diff_rows) > 0:
+                    print("\nSample of differing rows:")
+                    print(diff_rows.head().to_string())
+
+                    # Detailed column-by-column comparison
+                    print("\nDetailed column differences:")
+                    for col in data1.columns:
+                        if not data1[col].equals(data2[col]):
+                            print(f"\nDifferences in column '{col}':")
+                            diff_indices = data1[col] != data2[col]
+                            print(pd.concat([data1.loc[diff_indices, col], data2.loc[diff_indices, col]], axis=1, keys=[view1, view2]).head().to_string())
+
+        print("\nComparison complete.")
+
 
     def view_and_export_table(self, table_name):
         con = self.get_db_connection()
