@@ -547,9 +547,10 @@ class Project:
         result_df = pd.concat(results, ignore_index=True)
         result_df = result_df.sort_values("distinct_count")
 
+
         if display_in_method:
             display(Markdown(f"## Low Cardinality Report for '{table_name}'"))
-            display(result_df)
+            display(result_df.reset_index(drop=True))
 
         if export:
             filepath = self.output_dir / f"{table_name}_low_cardinality_report.xlsx"
@@ -642,7 +643,7 @@ class Project:
                 display(Markdown(f"#### Low Cardinality columns for {table_name}"))
             # Set display options to prevent wrapping
                 with pd.option_context('display.max_colwidth', None, 'display.width', None):
-                    display(low_card_df)
+                    display(low_card_df.reset_index(drop=True))
         else:
             print(f"Table '{table_name}' does not exist in the database.")
 
