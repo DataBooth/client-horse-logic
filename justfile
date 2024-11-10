@@ -33,7 +33,7 @@ qpublish location="gh-pages" project_name="notebooks":
 
 
 # Define the main publishing recipe (I think quarto publish is effectively this recipe - although not to public_repo)
-publish_to_public_repo:
+publish:
     #!/usr/bin/env bash
     set -euo pipefail
 
