@@ -102,78 +102,81 @@ ORDER BY ExperimentID, TrialNumber;
 
 CREATE OR REPLACE VIEW CorrectTrials AS
 SELECT 
-    t.TrialID,
-    t.ExperimentID,
-    t.TrialNumber,
-    t.TrialSubType,
+    t.TrialID, 
+    t.ExperimentID, 
+    t.TrialNumber, 
+    t.TrialSubType, 
     COALESCE(cs.ValueToCorrect, t.ResponseType) AS ResponseType,
-    t.CriterionType,
-    t.CriterionCount,
-    t.TrialStartTime,
+    t.CriterionType, 
+    t.CriterionCount, 
+    t.TrialStartTime, 
     t.TrialEndTime,
     CASE 
         WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != t.ResponseType THEN 'Corrected: ResponseType'
-        WHEN cs.FieldToCorrect = 'ResponseTime' AND cs.ValueToCorrect != r.ResponseTime THEN 'Corrected: ResponseTime'
-        ELSE 'Original: not a correction'
+        ELSE 'Original: not a correction' 
     END AS CorrectedFlag
-FROM 
-    TrialCBs t
+FROM TrialCBs t
 LEFT JOIN ExperimentCBsCorrected e ON t.ExperimentID = e.ExperimentID
 LEFT JOIN CorrectionsSplit cs ON e.LogFileName = cs.LogFilename 
-    AND t.TrialNumber = cs.TrialNumber
+    AND t.TrialNumber = cs.TrialNumber 
     AND cs.TableToCorrect = 'TrialCBs'
-LEFT JOIN ResponseCBs r ON t.TrialID = r.TrialID
-WHERE 
-    cs.FieldToCorrect IN ('ResponseType', 'ResponseTime') OR cs.FieldToCorrect IS NULL;
+    AND cs.FieldToCorrect = 'ResponseType'
 
 CREATE OR REPLACE VIEW TrialCBsCorrected AS
 WITH MaxExistingTrialID AS (
-    SELECT COALESCE(MAX(TrialID), 0) AS MaxID FROM TrialCBs
+    SELECT COALESCE(MAX(TrialID), 0) AS MaxID
+    FROM TrialCBs
 ),
 CombinedTrials AS (
     SELECT 
-        ct.TrialID,
-        ct.ExperimentID,
-        ct.TrialNumber,
-        ct.TrialSubType,
-        ct.ResponseType,
-        ct.CriterionType,
-        ct.CriterionCount,
-        ct.TrialStartTime,
-        ct.TrialEndTime,
-        ct.CorrectedFlag,
+        t.TrialID,
+        t.ExperimentID,
+        t.TrialNumber,
+        t.TrialSubType,
+        COALESCE(cs.ValueToCorrect, t.ResponseType) AS ResponseType,
+        t.CriterionType,
+        t.CriterionCount,
+        t.TrialStartTime,
+        t.TrialEndTime,
+        CASE 
+            WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != t.ResponseType THEN 'Corrected: ResponseType'
+            ELSE 'Original'
+        END AS CorrectedFlag,
         0 AS IsNewTrial
-    FROM CorrectTrials ct
-
+    FROM TrialCBs t
+    LEFT JOIN ExperimentCBsCorrected e ON t.ExperimentID = e.ExperimentID
+    LEFT JOIN CorrectionsSplit cs ON e.LogFileName = cs.LogFilename 
+        AND t.TrialNumber = cs.TrialNumber 
+        AND cs.TableToCorrect = 'TrialCBs'
+        AND cs.FieldToCorrect = 'ResponseType'
+    
     UNION ALL
-
+    
     SELECT 
         NULL AS TrialID,
-        at.ExperimentID,
-        at.TrialNumber,
-        at.TrialSubType,
-        at.ResponseType,
-        at.CriterionType,
-        at.CriterionCount,
-        at.TrialStartTime,
-        at.TrialEndTime,
-        at.CorrectedFlag,
+        ExperimentID,
+        TrialNumber,
+        TrialSubType,
+        ResponseType,
+        CriterionType,
+        CriterionCount,
+        TrialStartTime,
+        TrialEndTime,
+        'Added from Corrections' AS CorrectedFlag,
         1 AS IsNewTrial
-    FROM AddTrials at
+    FROM AddTrials
 ),
 NumberedNewTrials AS (
     SELECT 
         *,
-        ROW_NUMBER() OVER (
-            ORDER BY ExperimentID, TrialNumber
-        ) AS NewTrialNum
+        ROW_NUMBER() OVER (ORDER BY ExperimentID, TrialNumber) AS NewTrialNum
     FROM CombinedTrials
     WHERE TrialID IS NULL
 )
 SELECT 
     CASE 
-        WHEN ct.TrialID IS NOT NULL THEN ct.TrialID
-        ELSE m.MaxID + nnt.NewTrialNum
+        WHEN ct.TrialID IS NOT NULL THEN ct.TrialID 
+        ELSE m.MaxID + nnt.NewTrialNum 
     END AS TrialID,
     ct.ExperimentID,
     ct.TrialNumber,
@@ -226,44 +229,69 @@ FROM
 ORDER BY 
     Difference;
 
+CREATE OR REPLACE VIEW CorrectedResponses AS
+SELECT 
+    r.ResponseID, 
+    r.TrialID,
+    t.ExperimentID,
+    t.TrialNumber,
+    CASE 
+        WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' THEN CAST(cs.ValueToCorrect AS DOUBLE)
+        ELSE r.ResponseTime 
+    END AS ResponseTime,
+    r.EventDateTime,
+    CASE 
+        WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' AND 
+             (r.ResponseTime IS NULL OR ABS(CAST(cs.ValueToCorrect AS DOUBLE) - r.ResponseTime) > 0.000001) 
+            THEN 'Corrected: ResponseTime'
+        WHEN cs.ValueToCorrect = '' AND r.ResponseTime IS NOT NULL THEN 'Corrected: ResponseTime to NULL'
+        WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' AND r.ResponseTime IS NULL THEN 'Corrected: NULL to ResponseTime'
+        ELSE 'Original: not a correction'
+    END AS CorrectedFlag
+FROM ResponseCBs r
+JOIN TrialCBsCorrected t ON r.TrialID = t.TrialID
+LEFT JOIN ExperimentCBsCorrected e ON t.ExperimentID = e.ExperimentID
+LEFT JOIN CorrectionsSplit cs ON e.LogFileName = cs.LogFilename 
+    AND t.TrialNumber = cs.TrialNumber 
+    AND cs.TableToCorrect = 'ResponseCBs'
+    AND cs.FieldToCorrect = 'ResponseTime';
+
 CREATE OR REPLACE VIEW ResponseCBsCorrected AS
 WITH NewResponses AS (
     SELECT 
-        NULL AS ResponseID,
+        NULL AS ResponseID, 
         t.TrialID,
         CAST(c.ResponseTime AS DOUBLE) AS ResponseTime,
-        NULL AS EventDateTime, -- You may need to adjust this if you have this information
+        NULL AS EventDateTime,
         'Added from Corrections' AS CorrectedFlag
-    FROM 
-        TrialCBsCorrected t
-    JOIN 
-        ExperimentCBsCorrected e ON t.ExperimentID = e.ExperimentID
-    JOIN 
-        Corrections c ON e.LogFileName = c.LogFilename AND t.TrialNumber = c.TrialNumber
-    WHERE 
-        e.DataSource = 'Corrections xlsx: ADD'
+    FROM TrialCBsCorrected t
+    JOIN ExperimentCBsCorrected e ON t.ExperimentID = e.ExperimentID
+    JOIN Corrections c ON e.LogFileName = c.LogFilename AND t.TrialNumber = c.TrialNumber
+    WHERE e.DataSource LIKE '%AddExperiments%'
 ),
 ExistingResponses AS (
     SELECT 
-        r.ResponseID,
+        r.ResponseID, 
         r.TrialID,
         CASE 
-            WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' THEN 
-                CAST(cs.ValueToCorrect AS DOUBLE)
-            ELSE 
-                r.ResponseTime
+            WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' THEN CAST(cs.ValueToCorrect AS DOUBLE)
+            WHEN cs.ValueToCorrect = '' THEN NULL
+            ELSE r.ResponseTime 
         END AS ResponseTime,
         r.EventDateTime,
         CASE 
-            WHEN cs.ValueToCorrect IS NOT NULL THEN 'Corrected'
+            WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' AND 
+                 (r.ResponseTime IS NULL OR ABS(CAST(cs.ValueToCorrect AS DOUBLE) - r.ResponseTime) > 0.000001) 
+                THEN 'Corrected: ResponseTime'
+            WHEN cs.ValueToCorrect = '' AND r.ResponseTime IS NOT NULL THEN 'Corrected: ResponseTime to NULL'
+            WHEN cs.ValueToCorrect IS NOT NULL AND cs.ValueToCorrect != '' AND r.ResponseTime IS NULL THEN 'Corrected: NULL to ResponseTime'
             ELSE 'Original'
         END AS CorrectedFlag
-    FROM 
-        ResponseCBs r
+    FROM ResponseCBs r
     JOIN TrialCBsCorrected t ON r.TrialID = t.TrialID
     LEFT JOIN ExperimentCBsCorrected e ON t.ExperimentID = e.ExperimentID
     LEFT JOIN CorrectionsSplit cs ON e.LogFileName = cs.LogFilename 
-        AND t.TrialNumber = cs.TrialNumber
+        AND t.TrialNumber = cs.TrialNumber 
         AND cs.TableToCorrect = 'ResponseCBs'
         AND cs.FieldToCorrect = 'ResponseTime'
 )
