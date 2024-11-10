@@ -337,8 +337,6 @@ convert-md md_pattern="docs/*.md" output_dir="docs/output" format="pdf":
     echo "Conversion complete. Output files are in $full_output_dir"
 
 
-
-# Show the values of the arguments
 # Show the values of the arguments
 show_args md_pattern="docs/*.md" output_dir="docs/output" format="pdf":
     #!/usr/bin/env bash
@@ -346,3 +344,40 @@ show_args md_pattern="docs/*.md" output_dir="docs/output" format="pdf":
     echo "  md_pattern: {{md_pattern}}"
     echo "  output_dir: {{output_dir}}"
     echo "  format: {{format}}"
+
+
+# Extract SQL statements from a Jupyter notebook
+extract-sql notebook output="":
+    #!/usr/bin/env python3
+    import json
+    import re
+    from pathlib import Path
+
+    def extract_sql(notebook_path, output_path=None):
+        notebook_path = Path(notebook_path)
+        
+        if output_path is None or output_path == "":
+            output_path = notebook_path.with_stem(notebook_path.stem).with_suffix(".sql")
+        else:
+            output_path = Path(output_path)
+        
+        with open(notebook_path, 'r') as f:
+            notebook = json.load(f)
+        
+        sql_statements = []
+        for cell in notebook['cells']:
+            if cell['cell_type'] == 'code':
+                source = ''.join(cell['source'])
+                matches = re.findall(r'sql\s*=\s*"""(.*?)"""', source, re.DOTALL)
+                sql_statements.extend(matches)
+        
+        with open(output_path, 'w') as f:
+            for stmt in sql_statements:
+                f.write(stmt.strip() + '\n\n')
+        
+        if sql_statements:
+            print(f"SQL statements extracted from '{notebook_path}' and saved to '{output_path}'")
+        else:
+            print("Warning: No SQL statements found or extracted.")
+    
+    extract_sql('{{notebook}}', '{{output}}')
