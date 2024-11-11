@@ -13,41 +13,45 @@ The provided notebooks and supporting code are part of a data analysis pipeline 
 
 The repository also contains the code for controlling the experiments performed on the RaspeberryPi (see the `src` directory).
 
-## High Lvel Workflow
+## High Level Workflow
 
 The provided code and notebooks focus on two types of experiments: RPE and CB. The process is essentially the same for both RPE and CB experiments, with minor differences in data structure (e.g. an additional table `ResponsesCB` for CB experiments).
 
 1. Logfile Reconciliation:
-`logfile-reconciliation-CB.ipynb`
-`logfile-reconciliation-RPE.ipynb`
+   
+- [`logfile-reconciliation-CB.ipynb`](logfile-reconciliation-CB.html)
+- [`logfile-reconciliation-RPE.ipynb`](logfile-reconciliation-RPE.html)
 
 **Purpose:** Identify which log files should be included or excluded from the analysis for each experiment type.
 
 **Steps:**
+
 - Load and Parse Log Files: Load log files and parse their filenames to extract metadata.
 - Apply Exclusion Rules: Exclude log files based on predefined rules (e.g., test runs, bad data).
 - Export Lists: Export lists of included and excluded log files for further processing.
 
-2. Logfile to Database:
+1. Logfile to Database:
    
-- `logfile-to-database-CB.ipynb`
-- `logfile-to-database-RPE.ipynb`
+- [`logfile-to-database-CB.ipynb`](logfile-to-database-CB.html)
+- [`logfile-to-database-RPE.ipynb`](logfile-to-database-RPE.html)
 
 **Purpose:** Load the reconciled log files into a `DuckDB` database for each experiment type.
 
 **Steps:**
+
 - Load Log Files: Load the log files determined to be included from the reconciliation step.
 - Parse and Extract Data: Extract relevant data from each log file and structure it for database insertion.
 - Insert Data into Database: Insert the parsed data into a `DuckDB` database.
 
 3. Database Queries:
    
-- `database-queries-CB.ipynb`
-- `database-queries-RPE.ipynb`
+- [`database-queries-CB.ipynb`](database-queries-CB.html)
+- [`database-queries-RPE.ipynb`](database-queries-RPE.html)
 
 **Purpose:** Cross-check the data in the databases and provide examples of typical queries for each experiment type.
 
 **Steps:**
+
 - Setup Database Connection: Connect to the `DuckDB` database.
 - Run SQL Queries: Execute SQL queries to verify data integrity and demonstrate typical data retrieval operations.
 - Provide Query Examples: Showcase various SQL queries that might be useful for future analysis.
@@ -57,11 +61,12 @@ Note: These notebooks do not perform specific data analysis at this stage. They 
 
 4. Database Consistency Checks
    
-- `database-checks-CB.ipynb`
+- [`database-checks-CB.ipynb`](database-checks-CB.html)
   
 **Purpose:** Perform consistency checks on the local DuckDB CB database created using `logfile-to-database-CB.ipynb`.
 
 **Steps:** 
+
 - Run Integrity Checks: Execute a series of SQL queries to verify the integrity of the CB database:
   - Check for orphaned records (foreign key constraint violations)
   - Check for duplicate primary keys
@@ -76,29 +81,41 @@ This notebook serves as a crucial step in the data analysis pipeline, ensuring t
 
 5. Corrections to CB database:
 
-- `corrections-to-database-CB.ipynb`
+- [`corrections-to-database-CB.ipynb`](corrections-to-database-CB.html)
 
-**Purpose:** For CB experiments only, load and apply manual corrections to the CB database.
+**Purpose:** For CB experiments only, load manual corrections to the CB database.
 
 **Steps:**
+
 - Load the corrections from the Corrections workbook (field, current value, corrected value).
 - Insert these into a CB database table.
 - Apply corrections to a new view on the data.
 
 
+6. Apply corrections to CB database:
+
+- [`database-apply-corrections-CB.ipynb`](database-apply-corrections-CB.html)
+
+**Purpose:** For CB experiments only, apply the manual corrections to the CB database.
+
+**Steps:**
+
+- Load the corrections from the Corrections table (field, current value, corrected value).
+- Apply corrections to create new "corrected" views on the data.
+
 ### Process Flow Diagram
 
 ```{mermaid}
 graph TD
-    A[1. Start] --> B[2. Load Log files]
-    B --> C[3. Parse filenames]
-    C --> D[4. Apply Exclusion rules]
-    D --> E[5. Export Included/Excluded lists]
-    E --> F[6. Load Included Log files]
-    F --> G[7. Parse and extract data]
-    G --> H[8. Insert data into `DuckDB`]
-    H --> I[9. Export Database tables]
-    I --> J[10. End]
+    A[Start] --> B[Load Log files]
+    B --> C[Parse filenames]
+    C --> D[Apply Exclusion rules]
+    D --> E[Export Included/Excluded lists]
+    E --> F[Load Included Log files]
+    F --> G[Parse and extract data]
+    G --> H[Insert data into `DuckDB`]
+    H --> I[Load and Apply Corrections (CB only)]
+    I --> J[End]
 
     classDef process fill:#f9f,stroke:#333,stroke-width:2px;
     class A,B,C,D,E,F,G,H,I,J process;
@@ -114,8 +131,8 @@ Explanation of the Diagram
 6. Load Included Log Files: The included log files are loaded for detailed analysis.
 7. Parse and Extract Data: Relevant data is extracted from each log file and structured for database insertion.
 8. Insert Data into `DuckDB`: The parsed data is inserted into a `DuckDB` database. For CB experiments only, manual corrections are loaded and applied.
-9.  Export Database Tables: The database tables are exported to human-readable formats for review.
-10. End: The process concludes with the export of database tables.
+9.  Load and Apply Corrections (CB only).
+10. End: The process concludes.
 
 This workflow ensures that only relevant and high-quality log files are included in the analysis, and the data is structured and stored in a database for both RPE and CB experiments. The process is designed to be flexible and repeatable for both experiment types, with minor adjustments to account for the differences in data structure. The database queries serve as a foundation for future in-depth analysis, providing a way to verify data integrity and demonstrate typical data retrieval operations.
 
@@ -155,13 +172,13 @@ Together, these classes help you organise your research project, manage your dat
 
 ### Logfile Classes
 
-1. Logfile Class:
+1. `Logfile` Class:
 This is like a digital version of a physical log file. It can:
 - Read and store the contents of a log file
 - Parse the filename to extract important information
 - Interpret the contents of the file to create `Experiment`, `Trial`, and `Event` objects (for both RPE and CB experiments)
 
-2. Logs Class:
+2. `Logs` Class:
 This is like a file cabinet for all your log files. It can:
 - Find all the log files in a specific folder
 - Load them into Logfile objects
@@ -199,6 +216,10 @@ This is specific to cognitive bias experiments and records the subject's respons
 - How long it took (response time)
 
 These classes work together to organise and make sense of the data from your experiments. They turn raw log files into structured data that's easier to analyse and understand. The `Logfile` class does the hard work of interpreting each file, while the `Logs` class manages the collection of all your files.
+
+#### Corrected views
+
+While the "corrected" views are defined in the [`corrections-to-database-CB.ipynb`](corrections-to-database-CB.html) and [`database-apply-corrections-CB.ipynb`](database-apply-corrections-CB.html) notebooks, they are also been extracted into `sql/corrections-to-database-CB.sql` and `sql/database-apply-corrections-CB.sql` for ease of reference.
 
 ## Database details
 
