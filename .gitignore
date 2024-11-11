@@ -32,6 +32,8 @@ notebooks/public_repo/
 data/parquet/
 notebooks/results/CB/*.csv
 notebooks/results/RPE/*.csv
+notebooks/results/RPE/export_tables/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
