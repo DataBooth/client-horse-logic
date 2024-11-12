@@ -114,7 +114,7 @@ graph TD
     E --> F[Load Included Log files]
     F --> G[Parse and extract data]
     G --> H[Insert data into `DuckDB`]
-    H --> I[Load and Apply Corrections (CB only)]
+    H --> I[Load and Apply Corrections - CB only]
     I --> J[End]
 
     classDef process fill:#f9f,stroke:#333,stroke-width:2px;
