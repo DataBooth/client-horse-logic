@@ -98,7 +98,9 @@ class EventCB:
 
 
 class Logfile:
-    def __init__(self, file_name: str, file_contents: Optional[List[str]] = None) -> None:
+    def __init__(
+        self, file_name: str, file_contents: Optional[List[str]] = None
+    ) -> None:
         """
         Initialise a Logfile object.
 
@@ -159,7 +161,9 @@ class Logfile:
                 Parameters=None,
             )
         else:
-            raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
+            raise ValueError(
+                f"Filename {self.file_name} does not match the expected pattern."
+            )
 
     def parse_filename_components_cog_bias(self) -> ExperimentCB:
         """
@@ -187,7 +191,8 @@ class Logfile:
 
             # Determine SessionType based on the presence of criterion count/type
             has_criterion = (
-                "criterion count" in self.file_contents or "criterion type" in self.file_contents
+                "criterion count" in self.file_contents
+                or "criterion type" in self.file_contents
             )
             session_type = "training" if has_criterion else "test"
 
@@ -206,7 +211,9 @@ class Logfile:
                 Parameters=None,
             )
         else:
-            raise ValueError(f"Filename {self.file_name} does not match the expected pattern.")
+            raise ValueError(
+                f"Filename {self.file_name} does not match the expected pattern."
+            )
 
     def parse_parameters(self) -> Dict[str, Any]:
         """
@@ -234,7 +241,9 @@ class Logfile:
         """
         # Join the list of strings into a single string if necessary
         file_content_str = (
-            "".join(self.file_contents) if isinstance(self.file_contents, list) else self.file_contents
+            "".join(self.file_contents)
+            if isinstance(self.file_contents, list)
+            else self.file_contents
         )
         comment_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Comment: (.+)"
         comments = re.findall(comment_pattern, file_content_str)
@@ -288,9 +297,7 @@ class Logfile:
 
     def parse_trials_and_events_cog_bias(self) -> Optional[Dict[str, pd.DataFrame]]:
         file_content_str = "".join(self.file_contents)
-        trial_start_pattern = (
-            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
-        )
+        trial_start_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - system ready"
         trial_start_match = re.search(trial_start_pattern, file_content_str)
 
         if not trial_start_match:
@@ -298,72 +305,128 @@ class Logfile:
             return None
 
         experiment_start_time = datetime.fromisoformat(trial_start_match.group(1))
-        event_pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): ((GO|NOGO) for Trial (\d+) - (P|N|M|NP|NN) - (positive|negative|median|near positive|near negative)( - response time (\d+\.\d+))?( - (positive|negative) criterion count (\d+))?|Green button pressed - horse released)"
-        event_matches = re.findall(event_pattern, file_content_str)
+
+        NOGO_RESPONSE_TIME = 30.0
+
+        # Patterns
+        current_trial_pattern = (
+            r"(?P<dt>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): "
+            r"Current Trial Trial (?P<trial_number>\d+) - (?P<sub_type>NP|NN|P|N|M) - (?P<desc>near positive|near negative|positive|negative|median)"
+        )
+        go_nogo_pattern = (
+            r"(?P<dt>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): "
+            r"(?P<resp_type>GO|NOGO) for Trial (?P<trial_number>\d+) - (?P<sub_type>NP|NN|P|N|M) - (?P<desc>near positive|near negative|positive|negative|median)"
+            r"( - response time (?P<resp_time>\d+\.\d+))?"
+            r"( - (?P<crit_type>positive|negative) criterion count (?P<crit_count>\d+))?"
+        )
+        button_pattern = r"(?P<dt>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+): Green button pressed - horse released"
+
+        # Collect all events
+        events = []
+        for match in re.finditer(current_trial_pattern, file_content_str):
+            d = match.groupdict()
+            d["event_type"] = "current_trial"
+            events.append(d)
+        for match in re.finditer(go_nogo_pattern, file_content_str):
+            d = match.groupdict()
+            d["event_type"] = "go_nogo"
+            events.append(d)
+        for match in re.finditer(button_pattern, file_content_str):
+            d = match.groupdict()
+            d["event_type"] = "button"
+            events.append(d)
+
+        # Sort by timestamp
+        events.sort(key=lambda x: datetime.fromisoformat(x["dt"]))
 
         experiment = self.parse_filename_components_cog_bias()
         trials = []
         responses = []
-        events = []
+        events_out = []
         current_trial = None
         trial_id = 0
         response_id = 0
         event_id = 0
 
-        for event in event_matches:
-            (
-                event_datetime_str,
-                event_desc,
-                response_type,
-                trial_number,
-                trial_sub_type,
-                criterion_type,
-                _,
-                response_time,
-                _,
-                _,
-                criterion_count,
-            ) = event
-            event_datetime = datetime.fromisoformat(event_datetime_str)
+        for event in events:
+            event_datetime = datetime.fromisoformat(event["dt"])
 
-            if trial_number:
+            if event["event_type"] == "current_trial":
                 trial_id += 1
                 current_trial = TrialCB(
                     TrialID=trial_id,
                     ExperimentID=experiment.ExperimentID,
-                    TrialNumber=int(trial_number),
-                    ResponseType=response_type,
-                    TrialSubType=trial_sub_type,
-                    CriterionType=criterion_type if criterion_count else None,
-                    CriterionCount=int(criterion_count) if criterion_count else 0,
+                    TrialNumber=int(event["trial_number"]),
+                    ResponseType=None,
+                    TrialSubType=event["sub_type"],
+                    CriterionType=None,
+                    CriterionCount=0,
                     TrialStartTime=event_datetime,
                     TrialEndTime=event_datetime,
                 )
                 trials.append(current_trial)
-
-                if response_type == "GO" and response_time:
-                    response_id += 1
-                    responses.append(
-                        ResponseCB(
-                            ResponseID=response_id,
-                            TrialID=current_trial.TrialID,
-                            ResponseTime=float(response_time),
-                            EventDateTime=event_datetime,
-                        )
+            elif event["event_type"] == "go_nogo":
+                # Update current trial if trial number matches
+                if (
+                    current_trial is None
+                    or int(event["trial_number"]) != current_trial.TrialNumber
+                ):
+                    # If for some reason a GO/NOGO appears before a Current Trial, create a new trial
+                    trial_id += 1
+                    current_trial = TrialCB(
+                        TrialID=trial_id,
+                        ExperimentID=experiment.ExperimentID,
+                        TrialNumber=int(event["trial_number"]),
+                        ResponseType=None,
+                        TrialSubType=event["sub_type"],
+                        CriterionType=None,
+                        CriterionCount=0,
+                        TrialStartTime=event_datetime,
+                        TrialEndTime=event_datetime,
                     )
+                    trials.append(current_trial)
+                # Update trial info
+                current_trial.ResponseType = event["resp_type"]
+                current_trial.CriterionType = event.get("crit_type")
+                current_trial.CriterionCount = (
+                    int(event["crit_count"]) if event.get("crit_count") else 0
+                )
+                current_trial.TrialEndTime = event_datetime
 
+                # Add response
+                response_id += 1
+                if event["resp_type"] == "GO":
+                    resp_time = (
+                        float(event["resp_time"]) if event.get("resp_time") else None
+                    )
+                else:  # NOGO
+                    resp_time = NOGO_RESPONSE_TIME
+                responses.append(
+                    ResponseCB(
+                        ResponseID=response_id,
+                        TrialID=current_trial.TrialID,
+                        ResponseTime=resp_time,
+                        EventDateTime=event_datetime,
+                    )
+                )
+            # Add event logging for all event types
             if current_trial:
                 event_id += 1
-                events.append(
+                events_out.append(
                     EventCB(
                         EventID=event_id,
                         TrialID=current_trial.TrialID,
-                        EventType=event_desc,
+                        EventType=(
+                            event["event_type"]
+                            if event["event_type"] != "go_nogo"
+                            else event["resp_type"]
+                        ),
                         EventTime=event_datetime,
-                        ElapsedTime=(event_datetime - experiment_start_time).total_seconds(),
+                        ElapsedTime=(
+                            event_datetime - experiment_start_time
+                        ).total_seconds(),
                     )
                 )
-
                 current_trial.TrialEndTime = event_datetime
 
         if not trials:
@@ -373,7 +436,7 @@ class Logfile:
         experiment_df = pd.DataFrame([asdict(experiment)])
         trials_df = pd.DataFrame([asdict(trial) for trial in trials])
         responses_df = pd.DataFrame([asdict(response) for response in responses])
-        events_df = pd.DataFrame([asdict(event) for event in events])
+        events_df = pd.DataFrame([asdict(event) for event in events_out])
 
         return experiment_df, trials_df, responses_df, events_df
 
@@ -412,13 +475,17 @@ class Logfile:
 
             if value is None:
                 if debug:
-                    logger.warning(f"NULL value detected for column '{key}' in table '{table_name}'")
+                    logger.warning(
+                        f"NULL value detected for column '{key}' in table '{table_name}'"
+                    )
             elif isinstance(value, dict):
                 value = json.dumps(value)
             elif isinstance(value, float) and math.isnan(value):
                 value = "NaN"
                 if debug:
-                    logger.warning(f"NaN value detected for column '{key}' in table '{table_name}'")
+                    logger.warning(
+                        f"NaN value detected for column '{key}' in table '{table_name}'"
+                    )
 
             values.append(value)
 
@@ -522,9 +589,13 @@ class Logs:
         all_files = set(glob.glob(f"{self.path}/*{self.logfile_ext}"))
         if self.include:
             self.included_files = [Path(file).name for file in list(matched_files)]
-            self.excluded_files = [Path(file).name for file in list(all_files - matched_files)]
+            self.excluded_files = [
+                Path(file).name for file in list(all_files - matched_files)
+            ]
         else:
-            self.included_files = [Path(file).name for file in list(all_files - matched_files)]
+            self.included_files = [
+                Path(file).name for file in list(all_files - matched_files)
+            ]
             self.excluded_files = [Path(file).name for file in list(matched_files)]
 
         for file_name in self.included_files:
@@ -533,7 +604,9 @@ class Logs:
                 logfile = Logfile(file_name, file_contents)
                 self.logfiles.append(logfile)
 
-    def handle_specific_files(self, file_names: List[str], include: bool = True) -> None:
+    def handle_specific_files(
+        self, file_names: List[str], include: bool = True
+    ) -> None:
         """
         Handle specific file names to include or exclude.
 
@@ -582,7 +655,10 @@ class Logs:
 
         # Update the logfiles list based on the new included_files
         self.logfiles = [
-            Logfile(f"{self.path}/{file_name}", open(f"{self.path}/{file_name}", "r").readlines())
+            Logfile(
+                f"{self.path}/{file_name}",
+                open(f"{self.path}/{file_name}", "r").readlines(),
+            )
             for file_name in self.included_files
             if Path(f"{self.path}/{file_name}").exists()
         ]
@@ -592,7 +668,9 @@ class Logs:
         else:
             logger.info(f"# Files specifically excluded: {excluded_count}")
 
-    def create_filename_components_dataframe(self, file_list: List[str]) -> pd.DataFrame:
+    def create_filename_components_dataframe(
+        self, file_list: List[str]
+    ) -> pd.DataFrame:
         """
         Create a DataFrame containing filename components for RPE experiments.
 
@@ -635,7 +713,9 @@ class Logs:
         df = pd.DataFrame(data)
         return df
 
-    def create_filename_components_dataframe_cog_bias(self, file_list: List[str]) -> pd.DataFrame:
+    def create_filename_components_dataframe_cog_bias(
+        self, file_list: List[str]
+    ) -> pd.DataFrame:
         """
         Create a DataFrame containing filename components for cognitive bias experiments.
 
@@ -695,7 +775,11 @@ class Logs:
         file_names = df[1].tolist()
 
         # Filter out any non-log files
-        log_file_names = [file_name for file_name in file_names if file_name.endswith(self.logfile_ext)]
+        log_file_names = [
+            file_name
+            for file_name in file_names
+            if file_name.endswith(self.logfile_ext)
+        ]
 
         # Load these log files
         for file_name in log_file_names:
@@ -709,18 +793,26 @@ class Logs:
     def display_sessions_by_subject(self, df_out, subject_df):
         session_summary = []
         for n_subject, subject_name in enumerate(subject_df["subject_name"]):
-            df_ = df_out.drop(columns=["suffix", "subject_name"])[df_out["subject_name"] == subject_name]
+            df_ = df_out.drop(columns=["suffix", "subject_name"])[
+                df_out["subject_name"] == subject_name
+            ]
             n_session = len(df_)
-            session_summary.append((n_subject + 1, subject_name.capitalize(), n_session))
+            session_summary.append(
+                (n_subject + 1, subject_name.capitalize(), n_session)
+            )
             if n_session == 0:
                 logger.info(f"Subject {subject_name}: No experiments conducted")
             else:
                 df_.loc[:, "time_dff"] = df_["datetime"].diff()
                 display(
-                    Markdown(f"### {n_subject+1}. {subject_name.capitalize()}: {n_session} session(s)")
+                    Markdown(
+                        f"### {n_subject+1}. {subject_name.capitalize()}: {n_session} session(s)"
+                    )
                 )
                 display(df_)
-        return pd.DataFrame(session_summary, columns=["Subject number", "Subject name", "Session count"])
+        return pd.DataFrame(
+            session_summary, columns=["Subject number", "Subject name", "Session count"]
+        )
 
     def __str__(self):
         return f"Logs: {len(self.logfiles)} log files in {self.path}"
